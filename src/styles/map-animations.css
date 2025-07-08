@@ -1,0 +1,166 @@
+/* Enhanced map animations and effects */
+
+/* Smooth marker animations */
+@keyframes markerBounce {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
+.marker-bounce {
+  animation: markerBounce 0.5s ease-in-out;
+}
+
+/* Pulse effect for user location */
+@keyframes locationPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+.location-pulse {
+  animation: locationPulse 2s ease-out infinite;
+}
+
+/* Glassmorphism effects */
+.glass-card {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+}
+
+.dark .glass-card {
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Smooth transitions for map controls */
+.map-control-enter {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.map-control-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.3s ease-out;
+}
+
+/* Info window animations */
+.info-window-content {
+  transform-origin: bottom center;
+  animation: infoWindowOpen 0.3s ease-out;
+}
+
+@keyframes infoWindowOpen {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Selected agency card effects */
+.agency-card-selected {
+  position: relative;
+  overflow: hidden;
+}
+
+.agency-card-selected::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.agency-card-selected.is-selected::before {
+  opacity: 1;
+}
+
+/* Floating action button effects */
+.fab-analysis {
+  position: relative;
+  overflow: hidden;
+}
+
+.fab-analysis::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.fab-analysis:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Map loading skeleton */
+.map-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Enhanced hover states */
+.agency-marker {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.agency-marker:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .glass-card {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
+  .info-window-content {
+    max-width: 280px;
+  }
+}
+
+/* Performance optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
