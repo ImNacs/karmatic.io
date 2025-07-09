@@ -34,7 +34,7 @@ export function LocationAutocomplete({
   const [selectedIndex, setSelectedIndex] = useState(-1)
   
   const inputRef = useRef<HTMLInputElement>(null)
-  const { isLoaded, getPlacePredictions } = useGooglePlaces()
+  const { isLoaded, getPlacePredictions, resetSessionToken } = useGooglePlaces()
 
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
   const blurTimeout = useRef<NodeJS.Timeout | null>(null)
@@ -107,6 +107,7 @@ export function LocationAutocomplete({
     setShowPredictions(false)
     setPredictions([]) // Clear predictions after selection
     onPlaceSelect?.(prediction)
+    resetSessionToken() // Reset session token after place selection
     inputRef.current?.blur() // Remove focus after selection
   }
 

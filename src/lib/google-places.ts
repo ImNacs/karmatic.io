@@ -1,12 +1,16 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useRef } from "react";
 import { useGoogleMaps } from "@/components/google-maps-provider";
 
 // Google Places API configuration
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
+// Feature flag to enable new API (can be controlled via env variable)
+const USE_NEW_AUTOCOMPLETE_API = process.env.NEXT_PUBLIC_USE_NEW_PLACES_API !== 'false';
+
 // Custom hook for Google Places Autocomplete
 export function useGooglePlaces() {
   const { isLoaded: googleMapsLoaded } = useGoogleMaps();
+  const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   
   const isLoaded = useMemo(() => {
     return googleMapsLoaded && 
@@ -15,6 +19,20 @@ export function useGooglePlaces() {
            window.google.maps && 
            window.google.maps.places;
   }, [googleMapsLoaded]);
+
+  // Create or get current session token
+  const getSessionToken = useCallback(() => {
+    if (!isLoaded) return null;
+    if (!sessionTokenRef.current) {
+      sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
+    }
+    return sessionTokenRef.current;
+  }, [isLoaded]);
+
+  // Reset session token (call after place selection)
+  const resetSessionToken = useCallback(() => {
+    sessionTokenRef.current = null;
+  }, []);
 
   const createAutocompleteService = useCallback(() => {
     if (!isLoaded) return null;
@@ -26,10 +44,27 @@ export function useGooglePlaces() {
     return new window.google.maps.places.PlacesService(map);
   };
 
-  const getPlacePredictions = useCallback((
+  // Transform new API response to match legacy format
+  const transformSuggestion = useCallback((
+    suggestion: google.maps.places.AutocompleteSuggestion
+  ): PlacePrediction => {
+    const { placePrediction } = suggestion;
+    return {
+      place_id: placePrediction.placeId,
+      description: placePrediction.text.text,
+      structured_formatting: {
+        main_text: placePrediction.structuredFormat.mainText.text,
+        secondary_text: placePrediction.structuredFormat.secondaryText.text,
+      },
+      terms: [], // Terms are not directly available in new API
+    };
+  }, []);
+
+  // Legacy AutocompleteService implementation
+  const getPlacePredictionsLegacy = useCallback((
     input: string,
     options: Partial<google.maps.places.AutocompletionRequest> = {}
-  ): Promise<google.maps.places.AutocompletePrediction[]> => {
+  ): Promise<PlacePrediction[]> => {
     return new Promise((resolve, reject) => {
       const service = createAutocompleteService();
       if (!service) {
@@ -46,13 +81,65 @@ export function useGooglePlaces() {
 
       service.getPlacePredictions(request, (predictions, status) => {
         if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
-          resolve(predictions);
+          // Convert to our PlacePrediction type
+          const transformed = predictions.map(pred => ({
+            place_id: pred.place_id,
+            description: pred.description,
+            structured_formatting: pred.structured_formatting,
+            terms: pred.terms,
+          }));
+          resolve(transformed);
         } else {
           reject(new Error(`Places service error: ${status}`));
         }
       });
     });
   }, [createAutocompleteService]);
+
+  // New AutocompleteSuggestion implementation
+  const getPlacePredictionsNew = useCallback(async (
+    input: string,
+    options: any = {}
+  ): Promise<PlacePrediction[]> => {
+    if (!isLoaded) {
+      throw new Error("Google Places service not available");
+    }
+
+    const sessionToken = getSessionToken();
+    
+    const request = {
+      input,
+      includedRegionCodes: ["MX"], // Replaces componentRestrictions
+      includedTypes: ["geocode"], // Replaces types
+      sessionToken,
+      ...options,
+    };
+
+    try {
+      const { suggestions } = await window.google.maps.places.AutocompleteSuggestion
+        .fetchAutocompleteSuggestions(request);
+      
+      // Transform suggestions to match legacy format
+      return suggestions.map(transformSuggestion);
+    } catch (error) {
+      console.error("AutocompleteSuggestion error:", error);
+      throw new Error(`Places service error: ${error}`);
+    }
+  }, [isLoaded, getSessionToken, transformSuggestion]);
+
+  // Main function that routes to new or legacy API
+  const getPlacePredictions = useCallback((
+    input: string,
+    options: Partial<google.maps.places.AutocompletionRequest> = {}
+  ): Promise<PlacePrediction[]> => {
+    // Use new API if enabled
+    if (USE_NEW_AUTOCOMPLETE_API && isLoaded) {
+      return getPlacePredictionsNew(input, options);
+    }
+    
+    // Fallback to legacy API
+    return getPlacePredictionsLegacy(input, options);
+  }, [isLoaded, getPlacePredictionsNew, getPlacePredictionsLegacy]);
 
   const getPlaceDetails = useCallback((
     placeId: string
@@ -88,6 +175,7 @@ export function useGooglePlaces() {
     createPlacesService,
     getPlacePredictions,
     getPlaceDetails,
+    resetSessionToken,
     apiKey: GOOGLE_MAPS_API_KEY,
   };
 }
