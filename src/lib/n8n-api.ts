@@ -114,6 +114,7 @@ class N8NApiClient {
       };
       
       console.log('N8N API Request:', requestBody);
+      console.log('N8N Endpoint:', this.locateAgenciesEndpoint);
       
       const response = await fetch(this.locateAgenciesEndpoint, {
         method: 'POST',

@@ -44,10 +44,11 @@ export function SearchInterface({ onSearch, isLoading = false }: SearchInterface
     },
   })
 
-  const handleSubmit = (data: SearchFormData) => {
+  const handleSubmit = async (data: SearchFormData) => {
     // Track search initiation
     trackEvent.searchInitiated(data.location, data.query, isAuthenticated)
     
+    // Call the original onSearch to trigger the search
     onSearch({
       ...data,
       placeId: selectedPlace?.place_id,
