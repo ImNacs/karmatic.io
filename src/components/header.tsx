@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useTheme } from "next-themes"
+import { useUser, useClerk, SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -15,6 +16,8 @@ interface HeaderProps {
 export function Header({ onOpenSearch, userTokens = 150 }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { user } = useUser()
+  const { signOut } = useClerk()
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark")
@@ -58,6 +61,19 @@ export function Header({ onOpenSearch, userTokens = 150 }: HeaderProps) {
             <span className="sr-only">Toggle theme</span>
           </Button>
 
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+
+          <SignedOut>
+            <SignInButton mode="modal">
+              <Button variant="ghost" size="sm" className="hidden md:flex">
+                <FiUser className="mr-2 h-4 w-4" />
+                Iniciar sesión
+              </Button>
+            </SignInButton>
+          </SignedOut>
+
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -67,15 +83,26 @@ export function Header({ onOpenSearch, userTokens = 150 }: HeaderProps) {
             </SheetTrigger>
             <SheetContent side="right" className="w-64">
               <div className="flex flex-col space-y-4 mt-6">
-                <div className="flex items-center space-x-2 px-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <FiUser className="h-4 w-4" />
+                <SignedIn>
+                  <div className="flex items-center space-x-2 px-2">
+                    <UserButton afterSignOutUrl="/" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{user?.firstName || 'Usuario'}</p>
+                      <p className="text-xs text-muted-foreground">{user?.emailAddresses[0]?.emailAddress}</p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Usuario</p>
-                    <p className="text-xs text-muted-foreground">{userTokens} tokens</p>
+                </SignedIn>
+                
+                <SignedOut>
+                  <div className="px-2">
+                    <SignInButton mode="modal">
+                      <Button variant="default" className="w-full">
+                        <FiUser className="mr-2 h-4 w-4" />
+                        Iniciar sesión
+                      </Button>
+                    </SignInButton>
                   </div>
-                </div>
+                </SignedOut>
                 
                 <hr className="my-4" />
                 
@@ -91,22 +118,28 @@ export function Header({ onOpenSearch, userTokens = 150 }: HeaderProps) {
                   Nueva búsqueda
                 </Button>
                 
-                <Button variant="ghost" className="justify-start">
-                  <FiSettings className="mr-2 h-4 w-4" />
-                  Configuración
-                </Button>
-                
-                <Button variant="ghost" className="justify-start">
-                  <FiUser className="mr-2 h-4 w-4" />
-                  Mi cuenta
-                </Button>
-                
-                <hr className="my-4" />
-                
-                <Button variant="ghost" className="justify-start text-red-600">
-                  <FiLogOut className="mr-2 h-4 w-4" />
-                  Cerrar sesión
-                </Button>
+                <SignedIn>
+                  <Button variant="ghost" className="justify-start">
+                    <FiSettings className="mr-2 h-4 w-4" />
+                    Configuración
+                  </Button>
+                  
+                  <Button variant="ghost" className="justify-start">
+                    <FiUser className="mr-2 h-4 w-4" />
+                    Mi cuenta
+                  </Button>
+                  
+                  <hr className="my-4" />
+                  
+                  <Button 
+                    variant="ghost" 
+                    className="justify-start text-red-600"
+                    onClick={() => signOut()}
+                  >
+                    <FiLogOut className="mr-2 h-4 w-4" />
+                    Cerrar sesión
+                  </Button>
+                </SignedIn>
               </div>
             </SheetContent>
           </Sheet>

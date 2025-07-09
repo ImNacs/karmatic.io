@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
+import { useUser, useClerk, SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -34,6 +35,8 @@ interface SidebarContentProps {
   }>;
   userTokens: number;
   mounted: boolean;
+  user: any;
+  signOut: () => void;
 }
 
 const SidebarContent = React.memo(({ 
@@ -41,7 +44,9 @@ const SidebarContent = React.memo(({
   toggleTheme, 
   navigationItems, 
   userTokens, 
-  mounted 
+  mounted,
+  user,
+  signOut 
 }: SidebarContentProps) => (
   <div className="flex flex-col h-full">
     {/* Logo Section */}
@@ -72,17 +77,24 @@ const SidebarContent = React.memo(({
     {/* User Section */}
     <div className="p-4 border-t border-border/50 space-y-2">
       {/* User Profile */}
-      <div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-accent/30 transition-all duration-200 cursor-pointer group">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md group-hover:shadow-lg transition-all duration-200">
-          <FiUser className="h-4 w-4" />
+      <SignedIn>
+        <div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-accent/30 transition-all duration-200 cursor-pointer group">
+          <UserButton afterSignOutUrl="/" />
+          <div className="flex-1">
+            <p className="text-sm font-medium">{user?.firstName || 'Usuario'}</p>
+            <p className="text-xs text-muted-foreground">{user?.emailAddresses[0]?.emailAddress}</p>
+          </div>
         </div>
-        <div className="flex-1">
-          <p className="text-sm font-medium">Usuario</p>
-          <Badge variant="secondary" className="text-xs mt-1 bg-primary/10 text-primary border-primary/20">
-            {userTokens} tokens
-          </Badge>
-        </div>
-      </div>
+      </SignedIn>
+      
+      <SignedOut>
+        <SignInButton mode="modal">
+          <Button variant="default" className="w-full h-12">
+            <FiUser className="mr-2 h-4 w-4" />
+            Iniciar sesión
+          </Button>
+        </SignInButton>
+      </SignedOut>
 
       {/* Theme Toggle */}
       <Button
@@ -107,13 +119,16 @@ const SidebarContent = React.memo(({
       </Button>
 
       {/* Logout */}
-      <Button
-        variant="ghost"
-        className="w-full justify-start h-12 px-4 text-red-600 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] rounded-lg group"
-      >
-        <FiLogOut className="mr-3 h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-        Cerrar sesión
-      </Button>
+      <SignedIn>
+        <Button
+          variant="ghost"
+          className="w-full justify-start h-12 px-4 text-red-600 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] rounded-lg group"
+          onClick={() => signOut()}
+        >
+          <FiLogOut className="mr-3 h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
+          Cerrar sesión
+        </Button>
+      </SignedIn>
     </div>
   </div>
 ));
@@ -124,6 +139,8 @@ export function VerticalSidebar({ onOpenSearch, userTokens = 150 }: VerticalSide
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme } = useTheme()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { user } = useUser()
+  const { signOut } = useClerk()
   
   // Prevent hydration mismatch
   useEffect(() => {
@@ -151,6 +168,8 @@ export function VerticalSidebar({ onOpenSearch, userTokens = 150 }: VerticalSide
           navigationItems={navigationItems}
           userTokens={userTokens}
           mounted={mounted}
+          user={user}
+          signOut={signOut}
         />
       </aside>
 
@@ -165,6 +184,10 @@ export function VerticalSidebar({ onOpenSearch, userTokens = 150 }: VerticalSide
           </div>
 
           <div className="flex items-center space-x-2">
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+            
             <Button
               variant="ghost"
               size="sm"
@@ -206,6 +229,8 @@ export function VerticalSidebar({ onOpenSearch, userTokens = 150 }: VerticalSide
                     navigationItems={navigationItems}
                     userTokens={userTokens}
                     mounted={mounted}
+                    user={user}
+                    signOut={signOut}
                   />
                 </div>
               </SheetContent>
