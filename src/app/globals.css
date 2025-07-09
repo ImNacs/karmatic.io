@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "../styles/map-animations.css";
+@import "../styles/map-markers.css";
 
 @custom-variant dark (&:is(.dark *));
 

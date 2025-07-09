@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { VerticalSidebar } from "@/components/vertical-sidebar"
 import { SearchInterface } from "@/components/search-interface"
-import { AgencyMapEnhanced } from "@/components/agency-map-enhanced"
+import { AgencyMapOptimized } from "@/components/agency-map-optimized"
 import { AgencyDetail } from "@/components/agency-detail"
 import { LoadingScreen } from "@/components/loading-screen"
 import { Button } from "@/components/ui/button"
@@ -297,7 +297,7 @@ export default function Home() {
 
         {currentStep === "results" && (
           <div className="fixed inset-0 lg:left-64 bg-background">
-            <AgencyMapEnhanced
+            <AgencyMapOptimized
               agencies={agencies}
               searchLocation={searchCoordinates || undefined}
               selectedAgencies={selectedForAnalysis}
