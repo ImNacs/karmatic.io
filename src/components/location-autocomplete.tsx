@@ -152,28 +152,77 @@ export function LocationAutocomplete({
             onLocationSelect(coords)
           }
           
-          // Use Google Geocoding API to get address from coordinates
+          // Use Google Geocoding API to get neighborhood/area instead of exact address
           if (isLoaded && window.google?.maps) {
             const geocoder = new window.google.maps.Geocoder()
             const latlng = { lat: latitude, lng: longitude }
             
             geocoder.geocode({ location: latlng }, (results, status) => {
-              if (status === "OK" && results?.[0]) {
-                wasSelectedRef.current = true
-                onChange(results[0].formatted_address)
+              if (status === "OK" && results) {
+                // Look for neighborhood, locality, or administrative area
+                let locationName = ""
+                let cityName = ""
+                let stateName = ""
+                
+                // Extract location components
+                for (const result of results) {
+                  for (const component of result.address_components) {
+                    if (component.types.includes("neighborhood") && !locationName) {
+                      locationName = component.long_name
+                    } else if (component.types.includes("sublocality_level_1") && !locationName) {
+                      locationName = component.long_name
+                    } else if (component.types.includes("sublocality") && !locationName) {
+                      locationName = component.long_name
+                    } else if (component.types.includes("locality")) {
+                      cityName = component.long_name
+                    } else if (component.types.includes("administrative_area_level_1")) {
+                      stateName = component.short_name
+                    }
+                  }
+                  // Stop when we have enough information
+                  if (locationName && cityName) break
+                }
+                
+                // Build the location string with available information
+                let finalLocation = ""
+                if (locationName) {
+                  finalLocation = locationName
+                  if (cityName && cityName !== locationName) {
+                    finalLocation += `, ${cityName}`
+                  }
+                  if (stateName) {
+                    finalLocation += `, ${stateName}`
+                  }
+                } else if (cityName) {
+                  // If no neighborhood found, use city
+                  finalLocation = cityName
+                  if (stateName) {
+                    finalLocation += `, ${stateName}`
+                  }
+                } else if (stateName) {
+                  // Last resort, just use state
+                  finalLocation = stateName
+                }
+                
+                if (finalLocation) {
+                  wasSelectedRef.current = true
+                  onChange(finalLocation)
+                } else {
+                  // Ultimate fallback
+                  wasSelectedRef.current = true
+                  onChange("Mi ubicación actual")
+                }
               } else {
-                // Fallback to coordinates if geocoding fails
-                const mockLocation = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+                // Fallback to general area if geocoding fails
                 wasSelectedRef.current = true
-                onChange(mockLocation)
+                onChange("Mi ubicación actual")
               }
               setIsGettingLocation(false)
             })
           } else {
-            // Fallback to coordinates if Google Maps is not loaded
-            const mockLocation = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            // Fallback when Google Maps is not loaded
             wasSelectedRef.current = true
-            onChange(mockLocation)
+            onChange("Mi ubicación actual")
             setIsGettingLocation(false)
           }
         },
