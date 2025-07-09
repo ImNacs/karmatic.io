@@ -18,7 +18,44 @@ model User {
   lastName    String?
   imageUrl    String?
   phoneNumber String?
+  
+  // Relations
+  searchHistory SearchHistory[]
 
   @@index([email])
   @@index([clerkUserId])
+}
+
+// Track anonymous user searches
+model AnonymousSearch {
+  id           String   @id @default(cuid())
+  identifier   String   @unique // Cookie ID or IP hash
+  searchCount  Int      @default(0)
+  lastSearchAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  
+  // Related searches
+  searches     SearchHistory[]
+  
+  @@index([identifier, lastSearchAt])
+}
+
+// Store search history for both anonymous and authenticated users
+model SearchHistory {
+  id          String   @id @default(cuid())
+  location    String
+  query       String?
+  resultsJson Json?    // Store search results
+  createdAt   DateTime @default(now())
+  
+  // Relations - either anonymous or authenticated user
+  anonymousId String?
+  anonymous   AnonymousSearch? @relation(fields: [anonymousId], references: [id], onDelete: Cascade)
+  
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([anonymousId])
+  @@index([createdAt])
 }

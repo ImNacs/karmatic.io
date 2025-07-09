@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleMapsProvider } from "@/components/google-maps-provider";
 import { AuthSync } from "@/components/auth-sync";
+import { GTMScript, GTMNoScript } from "@/lib/gtm/gtm";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -71,10 +72,14 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="es" suppressHydrationWarning>
+        <head>
+          <GTMScript />
+        </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
           suppressHydrationWarning
         >
+          <GTMNoScript />
           <ThemeProvider
             attribute="class"
             defaultTheme="system"

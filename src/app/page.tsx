@@ -6,6 +6,7 @@ import { SearchInterface } from "@/components/search-interface"
 import { AgencyMapOptimized } from "@/components/agency-map-optimized"
 import { AgencyDetail } from "@/components/agency-detail"
 import { LoadingScreen } from "@/components/loading-screen"
+import { RegistrationModal } from "@/components/registration-modal"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +15,9 @@ import { FiMessageSquare, FiRefreshCw } from "react-icons/fi"
 import type { Agency, SearchData } from "@/types/agency"
 import { n8nApi } from "@/lib/n8n-api"
 import { useGooglePlaces } from "@/lib/google-places"
+import { useSearchLimit } from "@/hooks/use-search-limit"
+import { useUser } from "@clerk/nextjs"
+import { trackEvent } from "@/lib/gtm/gtm"
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<"search" | "results" | "analysis" | "chat">("search")
@@ -22,10 +26,13 @@ export default function Home() {
   const [agencies, setAgencies] = useState<Agency[]>([])
   const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null)
   const [selectedForAnalysis, setSelectedForAnalysis] = useState<string[]>([])
-  // const [searchData, setSearchData] = useState<SearchData | null>(null) // Not used after refactor
   const [searchCoordinates, setSearchCoordinates] = useState<{ lat: number; lng: number } | null>(null)
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false)
+  const [pendingSearchData, setPendingSearchData] = useState<SearchData | null>(null)
   
   const { getPlaceDetails } = useGooglePlaces()
+  const { canSearch, isAuthenticated, refreshLimit } = useSearchLimit()
+  const { isSignedIn } = useUser()
 
   // Mock data for demonstration
   const mockAgencies: Agency[] = [
@@ -122,11 +129,44 @@ export default function Home() {
   ]
 
   const handleSearch = async (data: SearchData) => {
+    // Check if user can search (limit check)
+    if (!canSearch && !isAuthenticated) {
+      // Store the search data for after registration
+      setPendingSearchData(data)
+      setShowRegistrationModal(true)
+      
+      // Track that search was blocked
+      trackEvent.searchBlocked(data.location, data.query)
+      return
+    }
+    
     // setSearchData(data) // Not used after refactor
     setIsLoading(true)
     setLoadingType("search")
     
     try {
+      // If anonymous user, increment their search count
+      if (!isAuthenticated) {
+        try {
+          const response = await fetch('/api/search/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              location: data.location,
+              query: data.query 
+            })
+          })
+          
+          if (response.ok) {
+            // Refresh the limit after tracking
+            await refreshLimit()
+          }
+        } catch (error) {
+          console.error('Error tracking search:', error)
+          // Continue with search even if tracking fails
+        }
+      }
+      
       let coordinates: { lat: number; lng: number } | undefined = undefined
       
       // First check if coordinates were provided directly (from geolocation)
@@ -415,6 +455,19 @@ export default function Home() {
         onSelectForAnalysis={(agency) => handleSelectForAnalysis(agency.id)}
         selectedAgencies={selectedForAnalysis}
         maxSelections={3}
+      />
+
+      <RegistrationModal
+        isOpen={showRegistrationModal}
+        onClose={() => {
+          setShowRegistrationModal(false)
+          setPendingSearchData(null)
+        }}
+        searchData={pendingSearchData ? {
+          location: pendingSearchData.location,
+          query: pendingSearchData.query
+        } : undefined}
+        trigger="search_limit"
       />
 
       {isLoading && (
