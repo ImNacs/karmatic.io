@@ -3,7 +3,6 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { APIProvider, Map } from '@vis.gl/react-google-maps'
 import { MapContent } from './components/MapContent'
-import { MAP_STYLES } from './utils/constants'
 import { useThemeDetection } from '@/hooks/use-theme-detection'
 import { cn } from '@/lib/utils'
 import type { Agency } from '@/types/agency'
@@ -103,25 +102,12 @@ export function AgencyMapOptimized({
     )
   }, [agencies, searchLocation])
   
-  /**
-   * Map options with theme-aware styles
-   */
-  const mapOptions = useMemo(() => ({
-    styles: isDarkMode ? MAP_STYLES.dark : MAP_STYLES.light,
-    disableDefaultUI: true,
-    gestureHandling: 'greedy',
-    keyboardShortcuts: false,
-    clickableIcons: false,
-    // Additional options for better performance
-    mapTypeControl: false,
-    streetViewControl: false,
-    fullscreenControl: false,
-    zoomControl: false,
-  }), [isDarkMode])
 
   return (
     <APIProvider 
       apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}
+      // Use beta version for dark mode support
+      version="beta"
       // Libraries are loaded automatically by @vis.gl/react-google-maps
     >
       <div className="relative w-full h-full">
@@ -139,8 +125,8 @@ export function AgencyMapOptimized({
         )} />
         
         <Map
-          // Custom map ID for styling (configured in Google Cloud Console)
-          mapId={process.env.NEXT_PUBLIC_GOOGLE_MAP_ID}
+          // Use beta colorScheme API for dark mode support
+          colorScheme={mounted ? (isDarkMode ? "DARK" : "LIGHT") : "LIGHT"}
           
           // Initial map position and zoom
           defaultCenter={center}
@@ -149,8 +135,15 @@ export function AgencyMapOptimized({
           // Performance optimizations
           reuseMaps={true} // Reuse map instances when remounting
           
-          // Apply theme-aware options
-          options={mapOptions}
+          // UX configurations
+          gestureHandling="greedy" // No ctrl needed for zoom
+          disableDefaultUI={true} // We provide custom controls
+          keyboardShortcuts={false} // Prevent conflicts with app shortcuts
+          clickableIcons={false} // Disable POI clicks
+          mapTypeControl={false}
+          streetViewControl={false}
+          fullscreenControl={false}
+          zoomControl={false}
         >
           {/* MapContent handles all map interactions and state */}
           <MapContent

@@ -80,6 +80,7 @@ export const MapContent: React.FC<MapContentProps> = ({
   // API loading status for conditional rendering
   const apiLoadingStatus = useApiLoadingStatus()
 
+
   /**
    * Responsive design handler
    * Detects screen size changes and adjusts UI accordingly
