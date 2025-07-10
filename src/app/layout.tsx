@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs';
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { GoogleMapsProvider } from "@/components/google-maps-provider";
-import { AuthSync } from "@/components/auth-sync";
+import { GoogleMapsProvider } from "@/providers/google-maps-provider";
+import { AuthSync } from "@/components/features/auth";
 import { GTMScript, GTMNoScript } from "@/lib/gtm/gtm";
 
 const geistSans = Geist({

@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useRef } from "react";
-import { useGoogleMaps } from "@/components/google-maps-provider";
+import { useGoogleMaps } from "@/providers/google-maps-provider";
 
 // Google Places API configuration
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;

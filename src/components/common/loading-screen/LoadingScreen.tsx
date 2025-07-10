@@ -9,6 +9,23 @@ interface LoadingScreenProps {
   type?: "search" | "analysis"
 }
 
+/**
+ * LoadingScreen - Full-screen loading overlay
+ * 
+ * @component
+ * @description
+ * Displays an animated loading screen with customizable messages
+ * and icon animations based on the operation type.
+ * 
+ * @example
+ * ```tsx
+ * <LoadingScreen 
+ *   title="Analizando agencias..."
+ *   subtitle="Comparando precios y servicios"
+ *   type="analysis"
+ * />
+ * ```
+ */
 export function LoadingScreen({ 
   title = "Buscando agencias...", 
   subtitle = "Estamos analizando las mejores opciones cerca de ti",
@@ -24,6 +41,7 @@ export function LoadingScreen({
         transition={{ duration: 0.5 }}
         className="bg-card p-8 rounded-lg shadow-lg max-w-md w-full mx-4 text-center"
       >
+        {/* Animated icons */}
         <div className="flex justify-center mb-6">
           <div className="relative">
             {icons.map((Icon, index) => (
@@ -47,6 +65,7 @@ export function LoadingScreen({
           </div>
         </div>
 
+        {/* Title */}
         <motion.h2
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -56,6 +75,7 @@ export function LoadingScreen({
           {title}
         </motion.h2>
 
+        {/* Subtitle */}
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -65,6 +85,7 @@ export function LoadingScreen({
           {subtitle}
         </motion.p>
 
+        {/* Loading dots and message */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

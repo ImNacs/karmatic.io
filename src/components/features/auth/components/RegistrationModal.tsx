@@ -1,11 +1,11 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { SignInButton } from '@clerk/nextjs';
-import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { SignInButton } from '@clerk/nextjs'
+import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { 
   FiMapPin, 
   FiSearch, 
@@ -15,19 +15,19 @@ import {
   FiX,
   FiCheckCircle,
   FiZap
-} from 'react-icons/fi';
-import { trackEvent } from '@/lib/gtm/gtm';
-import { cn } from '@/lib/utils';
+} from 'react-icons/fi'
+import { trackEvent } from '@/lib/gtm/gtm'
+import { cn } from '@/lib/utils'
 
 interface RegistrationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean
+  onClose: () => void
   searchData?: {
-    location: string;
-    query?: string;
-    resultsCount?: number;
-  };
-  trigger?: string;
+    location: string
+    query?: string
+    resultsCount?: number
+  }
+  trigger?: string
 }
 
 const features = [
@@ -55,37 +55,64 @@ const features = [
     description: 'Insights del mercado',
     color: 'from-orange-500 to-red-500',
   },
-];
+]
 
+/**
+ * RegistrationModal - Premium features upsell modal
+ * 
+ * @component
+ * @description
+ * Shows benefits of creating an account when users hit search limits.
+ * Features animated design and conversion-optimized messaging.
+ * 
+ * Features:
+ * - Animated gradient backgrounds
+ * - Feature grid with hover effects
+ * - Integration with Clerk for authentication
+ * - Analytics tracking for conversion funnel
+ * 
+ * @example
+ * ```tsx
+ * <RegistrationModal
+ *   isOpen={showModal}
+ *   onClose={() => setShowModal(false)}
+ *   searchData={{
+ *     location: "Roma Norte, CDMX",
+ *     resultsCount: 15
+ *   }}
+ *   trigger="search_limit"
+ * />
+ * ```
+ */
 export function RegistrationModal({ 
   isOpen, 
   onClose, 
   searchData,
   trigger = 'search_limit' 
 }: RegistrationModalProps) {
-  const [mounted, setMounted] = useState(false);
-  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false)
+  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null)
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (isOpen && mounted) {
-      trackEvent.registrationModalShown(trigger);
+      trackEvent.registrationModalShown(trigger)
     }
-  }, [isOpen, mounted, trigger]);
+  }, [isOpen, mounted, trigger])
 
   const handleClose = () => {
-    trackEvent.registrationModalDismissed(trigger);
-    onClose();
-  };
+    trackEvent.registrationModalDismissed(trigger)
+    onClose()
+  }
 
   const handleSignInClick = (method: string) => {
-    trackEvent.registrationCompleted(method, trigger);
-  };
+    trackEvent.registrationCompleted(method, trigger)
+  }
 
-  if (!mounted) return null;
+  if (!mounted) return null
 
   return (
     <AnimatePresence>
@@ -263,5 +290,5 @@ export function RegistrationModal({
         </Dialog>
       )}
     </AnimatePresence>
-  );
+  )
 }
