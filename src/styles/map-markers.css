@@ -76,23 +76,31 @@
   }
 }
 
-/* Dark mode styles */
-@media (prefers-color-scheme: dark) {
-  .marker-content {
-    background-color: #1F2937;
-  }
-  
-  .marker-icon {
-    stroke: #E5E7EB;
-  }
-  
-  .marker-content.selected {
-    background-color: #4F46E5;
-  }
-  
-  .marker-content.selected .marker-icon {
-    stroke: white;
-  }
+/* Dark mode styles - Using Tailwind's dark variant */
+.dark .marker-content,
+.marker-content.dark-mode {
+  background-color: #1F2937;
+}
+
+.dark .marker-icon,
+.dark-mode .marker-icon {
+  stroke: #E5E7EB;
+}
+
+.dark .marker-content.selected,
+.marker-content.dark-mode.selected {
+  background-color: #4F46E5;
+}
+
+.dark .marker-content.selected .marker-icon,
+.marker-content.dark-mode.selected .marker-icon {
+  stroke: white;
+}
+
+/* Dark mode cluster styles */
+.dark .cluster-marker {
+  background: #4F46E5;
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
 }
 
 /* Cluster styles */

@@ -164,3 +164,26 @@
 .will-change-opacity {
   will-change: opacity;
 }
+
+/* Theme transition */
+.theme-transition {
+  transition: background-color 0.3s ease, 
+              border-color 0.3s ease, 
+              color 0.3s ease,
+              stroke 0.3s ease,
+              fill 0.3s ease;
+}
+
+/* Map theme transition overlay */
+.map-theme-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.5s ease;
+  z-index: 1;
+}
+
+.map-theme-overlay.transitioning {
+  background: rgba(0, 0, 0, 0.1);
+}

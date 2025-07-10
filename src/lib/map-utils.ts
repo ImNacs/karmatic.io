@@ -52,11 +52,11 @@ export function calculateZoomLevel(bounds: google.maps.LatLngBounds, mapWidth: n
   return Math.min(Math.max(zoom, 0), 21) // Clamp between 0 and 21
 }
 
-export function optimizeMarkerContent(agency: Agency, isSelected: boolean): string {
-  // Return optimized HTML string for marker content
+export function optimizeMarkerContent(agency: Agency, isSelected: boolean, isDarkMode: boolean = false): string {
+  // Return optimized HTML string for marker content with theme support
   return `
-    <div class="marker-wrapper" data-agency-id="${agency.id}">
-      <div class="marker-content ${isSelected ? 'selected' : ''}">
+    <div class="marker-wrapper theme-transition" data-agency-id="${agency.id}">
+      <div class="marker-content ${isSelected ? 'selected' : ''} ${isDarkMode ? 'dark-mode' : ''}">
         <svg class="marker-icon" viewBox="0 0 24 24">
           <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
           <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
