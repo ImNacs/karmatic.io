@@ -1,33 +1,48 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { useUser } from '@clerk/nextjs';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiLock, FiUnlock } from 'react-icons/fi';
-import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react'
+import { useUser } from '@clerk/nextjs'
+import { motion, AnimatePresence } from 'framer-motion'
+import { FiSearch, FiLock, FiUnlock } from 'react-icons/fi'
+import { cn } from '@/lib/utils'
 
 interface SearchLimitIndicatorProps {
-  remaining: number;
-  total: number;
-  className?: string;
+  remaining: number
+  total: number
+  className?: string
 }
 
+/**
+ * SearchLimitIndicator - Visual indicator for search usage limits
+ * 
+ * @component
+ * @description
+ * Shows remaining free searches for unauthenticated users with
+ * animated visual feedback and progress indication.
+ * 
+ * Features:
+ * - Animated icons based on limit status
+ * - Progress bar showing usage
+ * - Color-coded states (normal/limited)
+ * - Smooth transitions
+ */
 export function SearchLimitIndicator({ 
   remaining, 
   total, 
   className 
 }: SearchLimitIndicatorProps) {
-  const { user } = useUser();
-  const [mounted, setMounted] = useState(false);
+  const { user } = useUser()
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setMounted(true)
+  }, [])
 
-  if (!mounted || user) return null;
+  // Don't show for authenticated users or during SSR
+  if (!mounted || user) return null
 
-  const isLimited = remaining === 0;
-  const percentage = (remaining / total) * 100;
+  const isLimited = remaining === 0
+  const percentage = (remaining / total) * 100
 
   return (
     <AnimatePresence mode="wait">
@@ -126,5 +141,5 @@ export function SearchLimitIndicator({
         )}
       </motion.div>
     </AnimatePresence>
-  );
+  )
 }

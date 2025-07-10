@@ -1,272 +1,198 @@
-# 🔍 Search - Interfaz de Búsqueda Inteligente
+# 🔍 Search Feature - Sistema de Búsqueda Inteligente
 
 ## 🎯 Propósito
 
-Esta feature es el punto de entrada principal de la aplicación. Permite a los usuarios buscar agencias automotrices por ubicación con autocompletado inteligente de Google Places, mostrando límites de búsqueda para usuarios no autenticados.
+El componente de búsqueda es la puerta de entrada a la aplicación, permitiendo a los usuarios buscar agencias automotrices por ubicación con opciones de filtrado avanzado.
 
 ## 🏗️ Arquitectura
 
 ```
 search/
-├── SearchInterface.tsx    # 🎯 Componente principal de búsqueda
-├── components/           # 📁 Subcomponentes (por implementar)
-└── index.ts             # 📤 Exportaciones
+├── SearchInterface.tsx          # Componente principal orquestador
+├── components/                  # Subcomponentes modulares
+│   ├── LocationAutocomplete/   # Campo con autocompletado de Google Places
+│   ├── SearchForm/             # Formulario principal con validación
+│   └── SearchLimitIndicator/   # Indicador visual de límites
+├── hooks/                      # Lógica de estado
+│   └── useSearchLimit.ts       # Gestión de límites de búsqueda
+├── utils/                      # Utilidades
+│   ├── validation.ts           # Schemas de validación con Zod
+│   └── constants.ts            # Constantes y configuración
+└── types/                      # Tipos específicos (si fuera necesario)
 ```
 
-## 🔍 Anatomía del Componente
+## 🎨 Componentes
 
-### Props Interface
+### SearchInterface
+**Componente principal** que orquesta toda la funcionalidad de búsqueda.
+
+```tsx
+<SearchInterface 
+  onSearch={handleSearch}
+  isLoading={searchInProgress}
+/>
+```
+
+**Props:**
+- `onSearch: (data: SearchData) => void` - Callback con los datos de búsqueda
+- `isLoading?: boolean` - Estado de carga
+
+### LocationAutocomplete
+**Campo inteligente** con autocompletado de Google Places.
+
+**Características:**
+- Autocompletado con debounce de 300ms
+- Detección de ubicación actual con privacidad
+- Navegación por teclado (flechas, enter, escape)
+- Limpieza de campo con un clic
+
+### SearchForm
+**Formulario estructurado** con validación robusta.
+
+**Campos:**
+- Ubicación (requerido)
+- Query de búsqueda (opcional)
+
+**Validación:**
+- Schema con Zod
+- Mensajes de error en español
+- Estados de campo dinámicos
+
+### SearchLimitIndicator
+**Indicador visual** del límite de búsquedas gratuitas.
+
+**Estados:**
+- Normal: Muestra búsquedas restantes con barra de progreso
+- Límite alcanzado: Animación y mensaje de advertencia
+- Oculto: Para usuarios autenticados
+
+## 🔧 Hooks Personalizados
+
+### useSearchLimit
+Hook para gestionar límites de búsqueda y autenticación.
 
 ```typescript
-interface SearchInterfaceProps {
-  onSearch: (data: SearchData) => void
-  isLoading?: boolean
-  className?: string
-}
-
-interface SearchData {
-  location: string      // Texto de ubicación
-  query?: string       // Búsqueda adicional (opcional)
-  placeId?: string     // Google Place ID
-  placeDetails?: {     // Detalles de Google Places
-    description: string
-    mainText: string
-    secondaryText: string
-  }
-  coordinates?: {
-    lat: number
-    lng: number
-  }
-}
+const { 
+  remaining,      // Búsquedas restantes
+  total,          // Total permitido
+  canSearch,      // ¿Puede buscar?
+  isAuthenticated,// ¿Está autenticado?
+  refreshLimit    // Función para actualizar
+} = useSearchLimit()
 ```
 
-## 🌟 Características Principales
+## 💡 Patrones de Diseño
 
-### 1. **Autocompletado Inteligente**
-- Integración con Google Places Autocomplete
-- Sugerencias en tiempo real
-- Sesión token para optimizar costos API
+### 1. **Composición sobre Herencia**
+```tsx
+// SearchInterface compone múltiples componentes especializados
+<SearchInterface>
+  <SearchForm>
+    <LocationAutocomplete />
+    <SearchButton />
+  </SearchForm>
+  <SearchLimitIndicator />
+</SearchInterface>
+```
 
-### 2. **Límite de Búsquedas**
-- Indicador visual para usuarios no autenticados
-- 5 búsquedas gratuitas por sesión
-- Componente `SearchLimitIndicator`
+### 2. **Separation of Concerns**
+- **SearchInterface**: Orquestación
+- **SearchForm**: Lógica de formulario
+- **LocationAutocomplete**: Integración con Google
+- **useSearchLimit**: Estado de límites
 
-### 3. **Validación y UX**
-- Validación de ubicación requerida
-- Estados de carga
-- Mensajes de error contextuales
-- Diseño responsive
+### 3. **Controlled Components**
+Todos los inputs son controlados por React Hook Form para mejor performance.
 
-## 🔄 Flujo de Búsqueda
+### 4. **Error Boundaries**
+Manejo de errores en cada nivel:
+- Validación de formulario
+- Errores de API
+- Fallbacks de ubicación
+
+## 🚀 Flujo de Datos
 
 ```mermaid
-graph LR
-    A[Usuario escribe] --> B[Google Places API]
-    B --> C[Sugerencias]
-    C --> D[Usuario selecciona]
-    D --> E[Obtener coordenadas]
-    E --> F[Validar límites]
-    F -->|OK| G[Ejecutar búsqueda]
-    F -->|Límite| H[Mostrar registro]
+graph TD
+    A[Usuario ingresa ubicación] --> B[LocationAutocomplete]
+    B --> C{¿Selecciona sugerencia?}
+    C -->|Sí| D[Guarda PlaceID]
+    C -->|No| E[Usa texto libre]
+    D --> F[SearchForm valida]
+    E --> F
+    F --> G{¿Es válido?}
+    G -->|Sí| H[Verifica límites]
+    G -->|No| I[Muestra errores]
+    H --> J{¿Puede buscar?}
+    J -->|Sí| K[Ejecuta onSearch]
+    J -->|No| L[Muestra límite]
 ```
 
-## 💡 Componentes Internos
+## 🎯 Mejores Prácticas
 
-### 1. **LocationAutocomplete** (Importado)
+### 1. **Performance**
+- Debounce en autocompletado (300ms)
+- Memoización de componentes pesados
+- Lazy loading de Google Maps
+
+### 2. **UX/Accesibilidad**
+- Navegación completa por teclado
+- Mensajes de error claros
+- Estados de carga visuales
+- Indicadores de límite prominentes
+
+### 3. **Seguridad/Privacidad**
+- No muestra dirección exacta en ubicación actual
+- Usa barrios/zonas generales
+- Session tokens para Google Places
+
+### 4. **Internacionalización**
+- Textos centralizados en constants.ts
+- Fácil traducción futura
+- Formatos de fecha/hora localizados
+
+## 🔍 Testing
+
 ```typescript
-<LocationAutocomplete
-  onPlaceSelect={handlePlaceSelect}
-  placeholder="¿Dónde buscas agencias?"
-  className={cn("w-full", { "error": hasError })}
-/>
+// Ejemplo de test para SearchForm
+describe('SearchForm', () => {
+  it('should validate location is required', async () => {
+    const { getByRole } = render(<SearchForm {...props} />)
+    
+    fireEvent.submit(getByRole('form'))
+    
+    await waitFor(() => {
+      expect(screen.getByText('La ubicación es requerida')).toBeInTheDocument()
+    })
+  })
+})
 ```
 
-**Características**:
-- Debouncing de 300ms
-- Filtrado por país (MX)
-- Manejo de sesión token
+## 📈 Métricas y Analytics
 
-### 2. **SearchLimitIndicator** (Importado)
-```typescript
-<SearchLimitIndicator />
-// Muestra: "3 de 5 búsquedas restantes"
-```
+El componente trackea:
+- Inicios de búsqueda
+- Tipo de ubicación (autocompletado vs manual)
+- Uso de ubicación actual
+- Límites alcanzados
 
-**Lógica**:
-- Hook `useSearchLimit`
-- LocalStorage para persistencia
-- Reset cada 24 horas
+## 🚧 Consideraciones Técnicas
 
-### 3. **SearchButton** (Interno)
-```typescript
-<Button 
-  type="submit" 
-  disabled={!location || isLoading}
-  className="w-full"
->
-  {isLoading ? <Spinner /> : 'Buscar agencias'}
-</Button>
-```
+### Google Places API
+- Requiere API key en variable de entorno
+- Límites de quota mensual
+- Session tokens para optimizar costos
 
-## 🎨 Estados Visuales
+### Estado Global
+- Límites de búsqueda en hook local
+- Posible migración a contexto si crece
 
-### 1. **Estado Inicial**
-```
-┌─────────────────────────────────────┐
-│ 🔍 ¿Dónde buscas agencias?         │
-│     Ciudad, colonia o dirección...  │
-├─────────────────────────────────────┤
-│ 🏷️ Tipo de servicio (opcional)     │
-│     Ej: "servicio premium"          │
-├─────────────────────────────────────┤
-│        [Buscar agencias]            │
-└─────────────────────────────────────┘
-```
-
-### 2. **Con Autocompletado**
-```
-┌─────────────────────────────────────┐
-│ 🔍 Polanco                          │
-├─────────────────────────────────────┤
-│ 📍 Polanco, CDMX                    │
-│ 📍 Polanco, Miguel Hidalgo          │
-│ 📍 Av. Presidente Masaryk, Polanco  │
-└─────────────────────────────────────┘
-```
-
-### 3. **Con Límite (Usuario no autenticado)**
-```
-┌─────────────────────────────────────┐
-│ ⚡ 2 de 5 búsquedas restantes       │
-├─────────────────────────────────────┤
-│ 🔍 ¿Dónde buscas agencias?         │
-│ ...                                 │
-```
-
-## 🚀 Mejoras Potenciales
-
-### 1. **Búsquedas Recientes**
-```typescript
-const [recentSearches, setRecentSearches] = useLocalStorage<SearchData[]>(
-  'recent-searches', 
-  []
-)
-
-// Mostrar cuando el input está vacío
-<RecentSearches 
-  searches={recentSearches}
-  onSelect={handleRecentSelect}
-/>
-```
-
-### 2. **Búsquedas Guardadas**
-```typescript
-interface SavedSearch {
-  id: string
-  name: string
-  searchData: SearchData
-  createdAt: Date
-}
-
-// Para usuarios autenticados
-<SavedSearches userId={user.id} />
-```
-
-### 3. **Filtros Avanzados**
-```typescript
-<AdvancedFilters>
-  <ServiceTypeFilter />
-  <RatingFilter min={4} />
-  <DistanceFilter max={10} unit="km" />
-  <HoursFilter openNow={true} />
-</AdvancedFilters>
-```
-
-## 💡 Tips del Mentor
-
-### 1. **Optimización de API**
-Google Places cobra por sesión. Usa el mismo token durante toda la interacción:
-```typescript
-const sessionToken = useMemo(
-  () => new google.maps.places.AutocompleteSessionToken(),
-  []
-)
-```
-
-### 2. **Debouncing Inteligente**
-300ms es el sweet spot. Menos = muchas llamadas. Más = se siente lento.
-
-### 3. **Fallbacks**
-Si Google Places falla, considera:
-- Cache de búsquedas populares
-- Búsqueda por texto libre
-- Sugerencias predefinidas
-
-## 🐛 Consideraciones Técnicas
-
-### 1. **Manejo de Errores**
-```typescript
-try {
-  const details = await getPlaceDetails(placeId)
-} catch (error) {
-  if (error.code === 'QUOTA_EXCEEDED') {
-    showError('Servicio temporalmente no disponible')
-    // Fallback a búsqueda por texto
-  }
-}
-```
-
-### 2. **Validación de Coordenadas**
-```typescript
-const isValidMexicoLocation = (lat: number, lng: number) => {
-  // Bounding box aproximado de México
-  return lat >= 14.5 && lat <= 32.7 && 
-         lng >= -118.4 && lng <= -86.7
-}
-```
-
-### 3. **Performance**
-```typescript
-// Memoizar componentes pesados
-const MemoizedAutocomplete = React.memo(LocationAutocomplete)
-
-// Evitar re-renders innecesarios
-const handleSearch = useCallback((data) => {
-  onSearch(data)
-}, [onSearch])
-```
-
-## 📚 Componentes a Extraer
-
-1. **SearchForm**
-   - Lógica del formulario
-   - Validación
-   - Submit handling
-
-2. **SearchFilters**
-   - Filtros colapsables
-   - Estado de filtros
-   - Badges de filtros activos
-
-3. **SearchHistory**
-   - Búsquedas recientes
-   - Búsquedas populares
-   - Gestión de favoritos
-
-## 🎯 Métricas de Éxito
-
-- **Tiempo a primera búsqueda**: < 10 segundos
-- **Tasa de completado**: > 80%
-- **Uso de autocompletado**: > 90%
-- **Búsquedas fallidas**: < 5%
-
-## 📖 Recursos
-
-- [Google Places Autocomplete](https://developers.google.com/maps/documentation/javascript/place-autocomplete)
-- [Search UX Best Practices](https://www.nngroup.com/articles/search-visible-and-simple/)
-- [Form Design Patterns](https://www.smashingmagazine.com/2018/08/best-practices-for-mobile-form-design/)
+### Optimizaciones Futuras
+- [ ] Cache de búsquedas recientes
+- [ ] Sugerencias basadas en historial
+- [ ] Búsqueda por voz
+- [ ] Filtros avanzados inline
 
 ---
 
-💎 **Reflexión del Mentor**: La búsqueda es la puerta de entrada. Si falla aquí, perdemos al usuario. Hazla obvia, rápida y tolerante a errores. Recuerda: el usuario no sabe exactamente qué busca hasta que lo ve en las sugerencias. El autocompletado no es solo una conveniencia, es una herramienta de descubrimiento.
+💡 **Nota del Arquitecto**: Este componente sigue el principio de "Progressive Disclosure" - muestra solo lo necesario inicialmente (campo de ubicación) y revela opciones avanzadas (query) de forma secundaria. Esto reduce la carga cognitiva y mejora la conversión.

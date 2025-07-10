@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useState, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
 
 /**
  * Search limit state interface that provides comprehensive information
@@ -9,15 +9,15 @@ import { useUser } from '@clerk/nextjs';
  */
 interface SearchLimit {
   /** Number of searches remaining in the current period */
-  remaining: number;
+  remaining: number
   /** Total searches allowed per period (1 for anonymous, Infinity for authenticated) */
-  total: number;
+  total: number
   /** Whether the user is authenticated via Clerk */
-  isAuthenticated: boolean;
+  isAuthenticated: boolean
   /** Computed property indicating if the user can perform a search */
-  canSearch: boolean;
+  canSearch: boolean
   /** Loading state while checking limits with the API */
-  loading: boolean;
+  loading: boolean
 }
 
 /**
@@ -62,36 +62,36 @@ interface SearchLimit {
  * ```
  */
 export function useSearchLimit() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useUser()
   const [limit, setLimit] = useState<SearchLimit>({
     remaining: 1,
     total: 1,
     isAuthenticated: false,
     canSearch: true,
     loading: true,
-  });
+  })
 
   useEffect(() => {
     async function checkLimit() {
-      if (!isLoaded) return;
+      if (!isLoaded) return
 
       try {
-        const response = await fetch('/api/search/check-limit');
+        const response = await fetch('/api/search/check-limit')
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json()
           setLimit({
             ...data,
             loading: false,
-          });
+          })
         }
       } catch (error) {
-        console.error('Error checking search limit:', error);
-        setLimit(prev => ({ ...prev, loading: false }));
+        console.error('Error checking search limit:', error)
+        setLimit(prev => ({ ...prev, loading: false }))
       }
     }
 
-    checkLimit();
-  }, [user, isLoaded]);
+    checkLimit()
+  }, [user, isLoaded])
 
   /**
    * Manually refreshes the search limit from the server.
@@ -103,25 +103,25 @@ export function useSearchLimit() {
    * @returns {Promise<void>}
    */
   const refreshLimit = async () => {
-    setLimit(prev => ({ ...prev, loading: true }));
+    setLimit(prev => ({ ...prev, loading: true }))
     
     try {
-      const response = await fetch('/api/search/check-limit');
+      const response = await fetch('/api/search/check-limit')
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json()
         setLimit({
           ...data,
           loading: false,
-        });
+        })
       }
     } catch (error) {
-      console.error('Error refreshing search limit:', error);
-      setLimit(prev => ({ ...prev, loading: false }));
+      console.error('Error refreshing search limit:', error)
+      setLimit(prev => ({ ...prev, loading: false }))
     }
-  };
+  }
 
   return {
     ...limit,
     refreshLimit,
-  };
+  }
 }

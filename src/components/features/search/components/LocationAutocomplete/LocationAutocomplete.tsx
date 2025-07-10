@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { FiMapPin, FiCrosshair, FiX } from "react-icons/fi"
 import { useGooglePlaces, type PlacePrediction } from "@/lib/google-places"
 import { motion, AnimatePresence } from "motion/react"
+import { LocationSuggestion } from "./LocationSuggestion"
+import { cn } from "@/lib/utils"
 
 interface LocationAutocompleteProps {
   value: string
@@ -18,6 +20,21 @@ interface LocationAutocompleteProps {
   className?: string
 }
 
+/**
+ * LocationAutocomplete - Google Places powered location search
+ * 
+ * @component
+ * @description
+ * Provides autocomplete functionality for location search with support
+ * for current location detection and keyboard navigation.
+ * 
+ * Features:
+ * - Google Places autocomplete
+ * - Current location detection
+ * - Keyboard navigation (arrows, enter, escape)
+ * - Debounced search
+ * - Privacy-focused location display (shows area, not exact address)
+ */
 export function LocationAutocomplete({
   value,
   onChange,
@@ -150,6 +167,10 @@ export function LocationAutocomplete({
     }
   }
 
+  /**
+   * Get current location and geocode to general area
+   * Prioritizes privacy by showing neighborhood/area instead of exact address
+   */
   const getCurrentLocation = () => {
     setIsGettingLocation(true)
     
@@ -267,7 +288,7 @@ export function LocationAutocomplete({
   }
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={cn("relative", className)}>
       <div className="relative">
         <FiMapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
@@ -310,8 +331,9 @@ export function LocationAutocomplete({
             className="h-10 w-10 p-0"
             onClick={getCurrentLocation}
             disabled={isGettingLocation || disabled}
+            title="Usar mi ubicación actual"
           >
-            <FiCrosshair className={`h-4 w-4 ${isGettingLocation ? "animate-spin" : ""}`} />
+            <FiCrosshair className={cn("h-4 w-4", isGettingLocation && "animate-spin")} />
           </Button>
         </div>
       </div>
@@ -329,26 +351,13 @@ export function LocationAutocomplete({
               <CardContent className="p-0">
                 <div className="max-h-60 overflow-y-auto">
                   {predictions.map((prediction, index) => (
-                    <button
+                    <LocationSuggestion
                       key={prediction.place_id}
-                      type="button"
-                      className={`w-full px-4 py-3 text-left hover:bg-muted/50 transition-colors border-b border-border last:border-b-0 focus:outline-none focus:bg-muted/50 ${
-                        index === selectedIndex ? "bg-muted/50" : ""
-                      }`}
+                      mainText={prediction.structured_formatting.main_text}
+                      secondaryText={prediction.structured_formatting.secondary_text}
+                      isSelected={index === selectedIndex}
                       onClick={() => handlePredictionClick(prediction)}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <FiMapPin className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium truncate">
-                            {prediction.structured_formatting.main_text}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {prediction.structured_formatting.secondary_text}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
+                    />
                   ))}
                 </div>
               </CardContent>
