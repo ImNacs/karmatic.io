@@ -105,6 +105,12 @@ export function useGooglePlaces() {
       throw new Error("Google Places service not available");
     }
 
+    // Check if the new API is available
+    if (!window.google?.maps?.places?.AutocompleteSuggestion?.fetchAutocompleteSuggestions) {
+      console.warn("AutocompleteSuggestion API not available, falling back to legacy");
+      return getPlacePredictionsLegacy(input, options);
+    }
+
     const sessionToken = getSessionToken();
     
     const request = {
@@ -123,9 +129,11 @@ export function useGooglePlaces() {
       return suggestions.map(transformSuggestion);
     } catch (error) {
       console.error("AutocompleteSuggestion error:", error);
-      throw new Error(`Places service error: ${error}`);
+      // Fallback to legacy API on error
+      console.warn("Falling back to legacy API due to error");
+      return getPlacePredictionsLegacy(input, options);
     }
-  }, [isLoaded, getSessionToken, transformSuggestion]);
+  }, [isLoaded, getSessionToken, transformSuggestion, getPlacePredictionsLegacy]);
 
   // Main function that routes to new or legacy API
   const getPlacePredictions = useCallback((

@@ -51,6 +51,15 @@ export function LocationAutocomplete({
       clearTimeout(debounceTimeout.current)
     }
 
+    // If value is empty, ensure everything is reset
+    if (!value || value.trim() === "") {
+      setPredictions([])
+      setShowPredictions(false)
+      setIsLoading(false)
+      setSelectedIndex(-1)
+      return
+    }
+
     if (value.length > 2 && isLoaded) {
       setIsLoading(true)
       debounceTimeout.current = setTimeout(() => {
@@ -64,6 +73,8 @@ export function LocationAutocomplete({
             console.error("Error getting predictions:", error)
             setPredictions([])
             setIsLoading(false)
+            // Reset session token on error to ensure clean state
+            resetSessionToken()
           })
       }, 300)
     } else {
@@ -77,7 +88,7 @@ export function LocationAutocomplete({
         clearTimeout(debounceTimeout.current)
       }
     }
-  }, [value, isLoaded, getPlacePredictions])
+  }, [value, isLoaded, getPlacePredictions, resetSessionToken])
 
   // Cleanup blur timeout on unmount
   useEffect(() => {
@@ -238,8 +249,20 @@ export function LocationAutocomplete({
   }
 
   const clearInput = () => {
+    // Reset all state when clearing
     onChange("")
     setShowPredictions(false)
+    setPredictions([]) // Clear predictions array
+    setSelectedIndex(-1) // Reset selected index
+    wasSelectedRef.current = false // Reset selection ref
+    resetSessionToken() // Reset Google Places session token
+    
+    // Clear any pending debounce timers
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current)
+      debounceTimeout.current = null
+    }
+    
     inputRef.current?.focus()
   }
 
