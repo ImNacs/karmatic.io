@@ -125,6 +125,9 @@ export function AgencyMapOptimized({
         )} />
         
         <Map
+          // Map ID is required for advanced markers
+          mapId={process.env.NEXT_PUBLIC_GOOGLE_MAP_ID}
+          
           // Use beta colorScheme API for dark mode support
           colorScheme={mounted ? (isDarkMode ? "DARK" : "LIGHT") : "LIGHT"}
           

@@ -8,6 +8,7 @@ import { AgencyComparison } from '@/components/features/agency-comparison'
 import { MapMarkers } from './Markers/MapMarkers'
 import { AgencyInfoWindow } from './Overlays/AgencyInfoWindow'
 import { MapControlsOverlay } from './Controls/MapControlsOverlay'
+import { MapZoomControls } from './Controls/MapZoomControls'
 import { SelectedAgenciesPanel } from './Overlays/SelectedAgenciesPanel'
 import { FloatingAnalysisButton } from './Overlays/FloatingAnalysisButton'
 import type { Agency } from '@/types/agency'
@@ -284,6 +285,13 @@ export const MapContent: React.FC<MapContentProps> = ({
 
       {/* Map controls */}
       <MapControlsOverlay agencyCount={agencies.length} />
+      
+      {/* Zoom and center controls */}
+      <MapZoomControls 
+        agencies={agencies}
+        searchLocation={searchLocation}
+        isMobile={isMobile}
+      />
 
       {/* Selected agencies panel */}
       <AnimatePresence>

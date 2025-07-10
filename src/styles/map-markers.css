@@ -17,6 +17,7 @@
   height: 48px;
   border-radius: 50%;
   background-color: white;
+  border: 2px solid #4F46E5;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
 }
@@ -80,11 +81,13 @@
 .dark .marker-content,
 .marker-content.dark-mode {
   background-color: #1F2937;
+  border: 2px solid #60A5FA;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
 }
 
 .dark .marker-icon,
 .dark-mode .marker-icon {
-  stroke: #E5E7EB;
+  stroke: #60A5FA;
 }
 
 .dark .marker-content.selected,
@@ -133,4 +136,43 @@
 .marker-wrapper {
   transform: translateZ(0);
   backface-visibility: hidden;
+}
+
+/* Map controls styles */
+.map-controls {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Better contrast for different map themes */
+.marker-content {
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Enhanced visibility on mobile */
+@media (max-width: 768px) {
+  .marker-content {
+    width: 44px;
+    height: 44px;
+    border-width: 3px;
+  }
+  
+  .marker-icon {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
+  }
+  
+  .marker-badge {
+    width: 22px;
+    height: 22px;
+    top: -6px;
+    right: -6px;
+  }
+  
+  .marker-badge svg {
+    width: 14px;
+    height: 14px;
+  }
 }
