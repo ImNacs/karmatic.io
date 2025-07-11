@@ -61,9 +61,6 @@ export default function Home() {
         query: data.query || null
       })
       
-      // Navigate immediately with temporary ID for instant feedback
-      router.push(`/explorer/${tempId}`)
-      
       // Execute search in background
       let searchResults
       
@@ -109,8 +106,8 @@ export default function Home() {
       // Update the temporary ID with the real ID
       updateSearchId(tempId, searchId)
       
-      // Update URL with real ID without full navigation
-      window.history.replaceState({}, '', `/explorer/${searchId}`)
+      // Navigate to explorer with real ID
+      router.push(`/explorer/${searchId}`)
       
     } catch (error) {
       console.error('Error processing search:', error)
