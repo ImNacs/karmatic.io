@@ -6,7 +6,7 @@ import { useUser, useClerk, SignInButton, SignedIn, SignedOut, UserButton } from
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { 
   FiSun, 
   FiMoon, 
@@ -219,6 +219,7 @@ export function VerticalSidebar({ onOpenSearch, userTokens = 150 }: VerticalSide
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-64 p-0">
+                <SheetTitle className="sr-only">Menu de navegación</SheetTitle>
                 <div className="flex items-center justify-between p-4 border-b">
                   <div className="flex items-center space-x-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">

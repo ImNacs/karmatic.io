@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "../styles/map-animations.css";
 @import "../styles/map-markers.css";
+@import "../styles/mobile-premium.css";
 
 @custom-variant dark (&:is(.dark *));
 

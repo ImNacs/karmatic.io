@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import ExplorerResults from './ExplorerResults'
+import ExplorerResultsMobile from './ExplorerResultsMobile'
 
 interface PageProps {
   params: {
@@ -36,7 +36,7 @@ export default async function ExplorerSearchPage({ params }: PageProps) {
     const coordinates = searchData?.coordinates
     
     return (
-      <ExplorerResults
+      <ExplorerResultsMobile
         searchId={search_id}
         location={searchHistory.location}
         query={searchHistory.query}

@@ -31,7 +31,8 @@ export function AIAssistant() {
           
           <button
             onClick={closeAssistant}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
+            aria-label="Cerrar AI Assistant"
           >
             <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>

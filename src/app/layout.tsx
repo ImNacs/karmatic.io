@@ -9,7 +9,6 @@ import { AuthSync } from "@/components/features/auth";
 import { GTMScript, GTMNoScript } from "@/lib/gtm/gtm";
 import { SearchHistoryProvider } from "@/contexts/SearchHistoryContext";
 import { VerticalSidebar } from "@/components/features/sidebar";
-import { AIOverlay } from "@/components/features/ai-assistant/AIOverlay";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -98,7 +97,6 @@ export default function RootLayout({
                     {children}
                   </main>
                 </div>
-                <AIOverlay />
               </SearchHistoryProvider>
             </GoogleMapsProvider>
             <Toaster />

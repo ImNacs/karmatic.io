@@ -79,12 +79,10 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
   const [activePanel, setActivePanel] = useState<PanelType>('chat')
   const [isMobile, setIsMobile] = useState(false)
   
-  // Extract current search ID from pathname first
-  // For now, allow AI Assistant to work globally by using a fallback ID
-  const pathSearchId = pathname.startsWith('/explorer/') 
+  // Extract current search ID from pathname - only works on search pages
+  const currentSearchId = pathname.startsWith('/explorer/') 
     ? pathname.split('/')[2] 
     : null
-  const currentSearchId = pathSearchId || 'global-chat'
   
   // Chat State - Maps by searchId for isolation
   const [messagesBySearch, setMessagesBySearch] = useState<Map<string, ChatMessage[]>>(new Map())
@@ -204,30 +202,26 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
           newMap.set(currentSearchId, existingMessages)
           return newMap
         })
-      } else if (messages.length === 0) {
-        // Create welcome message for new conversation
-        const welcomeMessage: ChatMessage = {
-          id: `welcome-${currentSearchId}-${Date.now()}`,
-          type: 'assistant',
-          content: generateWelcomeMessage(searchContext?.currentSearch),
-          timestamp: new Date(),
-          metadata: {
-            suggestedActions: currentSearchId === 'global-chat' 
-              ? [
-                  'Buscar concesionarios cerca de mí',
-                  '¿Cómo funciona Karmatic?',
-                  'Ayúdame a encontrar un auto',
-                  'Comparar precios de autos'
-                ]
-              : [
-                  '¿Cuáles son los mejores concesionarios aquí?',
-                  'Muéstrame opciones de financiamiento',
-                  'Calcula pagos mensuales',
-                  'Compara precios'
-                ]
+      } else if (messages.length === 0 && searchContext?.currentSearch) {
+        // Create welcome message for new conversation only if we have search context
+        const welcomeContent = generateWelcomeMessage(searchContext.currentSearch)
+        if (welcomeContent) {
+          const welcomeMessage: ChatMessage = {
+            id: `welcome-${currentSearchId}-${Date.now()}`,
+            type: 'assistant',
+            content: welcomeContent,
+            timestamp: new Date(),
+            metadata: {
+              suggestedActions: [
+                '¿Cuáles son los mejores concesionarios aquí?',
+                'Muéstrame opciones de financiamiento',
+                'Calcula pagos mensuales',
+                'Compara precios'
+              ]
+            }
           }
+          addMessageToSearch(currentSearchId, welcomeMessage)
         }
-        addMessageToSearch(currentSearchId, welcomeMessage)
       }
     }
   }, [currentSearchId, searchContext, addMessageToSearch, loadConversationFromStorage, messages.length])
@@ -400,9 +394,8 @@ function extractUserPreferences(searches: any[]) {
 }
 
 function generateWelcomeMessage(search: any) {
-  // Handle global chat case
   if (!search) {
-    return `¡Hola! Soy tu AI Assistant de Karmatic. Puedo ayudarte a encontrar concesionarios, analizar precios, comparar opciones y mucho más. ¿En qué te puedo asistir hoy?`
+    return '' // No welcome message if no search context
   }
   
   const location = search.location
