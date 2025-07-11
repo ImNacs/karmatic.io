@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useAIAssistant } from "@/contexts/AIAssistantContext"
-import { FiSend, FiPaperclip, FiMic, FiMessageSquare } from "react-icons/fi"
+import { FiSend, FiMessageSquare } from "react-icons/fi"
 import { motion, AnimatePresence } from "motion/react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils"
 export function ChatPanelMobile() {
   const { messages, sendMessage, isTyping } = useAIAssistant()
   const [input, setInput] = useState("")
-  const [isRecording, setIsRecording] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [showQuickActions, setShowQuickActions] = useState(true)
@@ -76,14 +75,14 @@ export function ChatPanelMobile() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-8"
+            className="text-center py-8 px-4"
           >
-            <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center mx-auto mb-4">
-              <FiMessageSquare className="w-8 h-8 text-white" />
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+              <FiMessageSquare className="w-6 h-6 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">Asistente IA</h3>
+            <h3 className="text-base font-medium mb-1">Pregunta algo...</h3>
             <p className="text-sm text-muted-foreground mb-6">
-              Pregúntame sobre las agencias encontradas
+              Información sobre las agencias encontradas
             </p>
             
             {showQuickActions && (
@@ -191,69 +190,37 @@ export function ChatPanelMobile() {
       </div>
 
       {/* Input Area */}
-      <div className="border-t bg-background/95 backdrop-blur-sm p-4 safe-area-bottom">
-        <div className="flex items-end gap-2">
-          <button
-            className="p-2.5 rounded-full hover:bg-accent transition-colors haptic-press"
-            onClick={() => {/* Handle attachments */}}
-          >
-            <FiPaperclip className="w-5 h-5" />
-          </button>
-
-          <div className="flex-1 relative">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Escribe tu mensaje..."
-              className={cn(
-                "w-full resize-none rounded-2xl bg-muted px-4 py-2.5 pr-12",
-                "focus:outline-none focus:ring-2 focus:ring-primary/20",
-                "placeholder:text-muted-foreground text-sm",
-                "min-h-[44px] max-h-[120px] mobile-input"
-              )}
-              rows={1}
-            />
-            
-            <button
-              onClick={() => setIsRecording(!isRecording)}
-              className={cn(
-                "absolute right-2 bottom-2 p-2 rounded-full transition-all haptic-press",
-                isRecording
-                  ? "bg-red-500 text-white animate-pulse"
-                  : "hover:bg-accent"
-              )}
-            >
-              <FiMic className="w-4 h-4" />
-            </button>
-          </div>
-
+      <div className="bg-background p-4 safe-area-bottom">
+        <div className="relative">
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Pregunta algo..."
+            className={cn(
+              "w-full resize-none rounded-full bg-muted px-4 py-3 pr-12",
+              "focus:outline-none focus:ring-1 focus:ring-border",
+              "placeholder:text-muted-foreground text-sm",
+              "min-h-[48px] max-h-[120px]"
+            )}
+            rows={1}
+          />
+          
           <button
             onClick={handleSend}
             disabled={!input.trim()}
             className={cn(
-              "p-2.5 rounded-full transition-all haptic-press mobile-button-premium",
+              "absolute right-2 top-1/2 -translate-y-1/2",
+              "p-2 rounded-full transition-all",
               input.trim()
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-muted text-muted-foreground"
+                ? "text-primary hover:bg-accent"
+                : "text-muted-foreground"
             )}
           >
             <FiSend className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Character counter */}
-        {input.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-2 text-xs text-muted-foreground text-right"
-          >
-            {input.length} / 500
-          </motion.div>
-        )}
       </div>
     </div>
   )

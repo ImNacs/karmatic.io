@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
 import { AgencyMapOptimized } from "@/components/features/agency-map"
@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { FiMessageSquare, FiRefreshCw, FiMap } from "react-icons/fi"
-import { ChevronLeft, ChevronRight, GripVertical, Maximize2, Minimize2 } from "lucide-react"
+import { FiMessageSquare, FiRefreshCw, FiShare2, FiSearch } from "react-icons/fi"
+import { GripVertical, Maximize2, Minimize2, ChevronUp, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ChatPanel } from "@/components/features/ai-assistant/panels/ChatPanel"
 import { ChatPanelMobile } from "@/components/features/ai-assistant/panels/ChatPanelMobile"
 import { AIAssistantProvider } from "@/contexts/AIAssistantContext"
-import { motion, AnimatePresence, useMotionValue, useTransform } from "motion/react"
+import { motion } from "motion/react"
+import { UserButton } from "@clerk/nextjs"
 import type { Agency } from "@/types/agency"
 
 interface ExplorerResultsProps {
@@ -28,7 +29,6 @@ interface ExplorerResultsProps {
   isAuthenticated: boolean
 }
 
-type ViewMode = "map" | "chat" | "split"
 type DeviceType = "mobile" | "tablet" | "desktop"
 
 export default function ExplorerResultsMobile({
@@ -45,15 +45,11 @@ export default function ExplorerResultsMobile({
   const [loadingType, setLoadingType] = useState<"search" | "analysis">("search")
   const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null)
   const [selectedForAnalysis, setSelectedForAnalysis] = useState<string[]>([])
-  const [viewMode, setViewMode] = useState<ViewMode>("map")
   const [deviceType, setDeviceType] = useState<DeviceType>("desktop")
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isMapCollapsed, setIsMapCollapsed] = useState(false)
   
   const router = useRouter()
-  
-  // Touch gesture values for mobile swipe
-  const x = useMotionValue(0)
-  const opacity = useTransform(x, [-100, 0, 100], [0.5, 1, 0.5])
   
   // Mock data for when n8n is not configured
   const mockAgencies: Agency[] = [
@@ -162,13 +158,10 @@ export default function ExplorerResultsMobile({
       const width = window.innerWidth
       if (width < 640) {
         setDeviceType("mobile")
-        setViewMode("map") // Default to map on mobile
       } else if (width < 1024) {
         setDeviceType("tablet")
-        setViewMode("split")
       } else {
         setDeviceType("desktop")
-        setViewMode("split")
       }
     }
 
@@ -177,16 +170,6 @@ export default function ExplorerResultsMobile({
     return () => window.removeEventListener("resize", checkDevice)
   }, [])
 
-  // Handle swipe gestures on mobile
-  const handleSwipe = useCallback((direction: "left" | "right") => {
-    if (deviceType !== "mobile") return
-    
-    if (direction === "left" && viewMode === "map") {
-      setViewMode("chat")
-    } else if (direction === "right" && viewMode === "chat") {
-      setViewMode("map")
-    }
-  }, [deviceType, viewMode])
 
   const handleSelectForAnalysis = (agencyId: string) => {
     setSelectedForAnalysis(prev => {
@@ -222,140 +205,161 @@ export default function ExplorerResultsMobile({
 
   const selectedAgenciesData = agencies.filter(agency => selectedForAnalysis.includes(agency.id))
 
-  // Mobile bottom tabs component
-  const MobileBottomTabs = () => (
-    <motion.div
-      initial={{ y: 100 }}
-      animate={{ y: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t lg:hidden"
-    >
-      <div className="flex h-16 items-center justify-around px-4">
-        <button
-          onClick={() => setViewMode("map")}
-          className={cn(
-            "flex flex-col items-center justify-center flex-1 h-full gap-1",
-            "transition-all duration-200",
-            viewMode === "map" ? "text-primary" : "text-muted-foreground"
-          )}
-        >
-          <FiMap className="w-5 h-5" />
-          <span className="text-xs font-medium">Mapa</span>
-        </button>
+  // Mobile header component (Perplexity style)
+  const MobileHeader = () => (
+    <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b lg:hidden">
+      <div className="flex items-center justify-between px-4 h-14">
+        {/* Left: User avatar */}
+        <UserButton 
+          afterSignOutUrl="/"
+          appearance={{
+            elements: {
+              avatarBox: "w-8 h-8"
+            }
+          }}
+        />
         
+        {/* Center: Search query */}
+        <div className="flex-1 mx-4 text-center">
+          <p className="text-sm font-medium truncate">
+            {location}
+            {query && <span className="text-muted-foreground"> • {query}</span>}
+          </p>
+        </div>
+        
+        {/* Right: Share button */}
         <button
-          onClick={() => setViewMode("chat")}
-          className={cn(
-            "flex flex-col items-center justify-center flex-1 h-full gap-1",
-            "transition-all duration-200 relative",
-            viewMode === "chat" ? "text-primary" : "text-muted-foreground"
-          )}
+          onClick={() => {
+            if (navigator.share) {
+              navigator.share({
+                title: `Búsqueda en ${location}`,
+                text: query || 'Agencias automotrices',
+                url: window.location.href
+              })
+            } else {
+              toast.success("Enlace copiado al portapapeles")
+              navigator.clipboard.writeText(window.location.href)
+            }
+          }}
+          className="p-2 hover:bg-accent rounded-lg transition-colors"
         >
-          <FiMessageSquare className="w-5 h-5" />
-          <span className="text-xs font-medium">Chat</span>
-          {/* Notification badge */}
-          <span className="absolute top-1 right-1/4 w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
+          <FiShare2 className="w-5 h-5" />
         </button>
       </div>
-    </motion.div>
+    </div>
   )
 
-  // Mobile swipeable view
+  // Mobile bottom navigation (Perplexity style)
+  const MobileBottomNav = () => (
+    <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 pt-2 lg:hidden">
+      <div className="flex items-center justify-between">
+        <button
+          onClick={handleNewSearch}
+          className="flex items-center gap-2 px-5 py-2.5 bg-muted hover:bg-muted/80 rounded-full transition-all"
+        >
+          <FiSearch className="w-4 h-4" />
+          <span className="text-sm font-medium">Búsquedas</span>
+        </button>
+      </div>
+    </div>
+  )
+
+  // Mobile view (Perplexity style layout)
   const MobileView = () => (
-    <div className="fixed inset-0 bg-background overflow-hidden">
-      <AnimatePresence mode="wait">
-        {viewMode === "map" ? (
-          <motion.div
-            key="map"
-            initial={{ x: -300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 300, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={(_, info) => {
-              if (info.offset.x < -100) handleSwipe("left")
-            }}
-            style={{ x, opacity }}
-            className="absolute inset-0"
-          >
-            <div className="h-full w-full relative">
-              <AgencyMapOptimized
-                agencies={agencies}
-                searchLocation={searchCoordinates}
-                selectedAgencies={selectedForAnalysis}
-                onAgencySelect={handleSelectForAnalysis}
-                onStartAnalysis={handleStartAnalysis}
-                isLoading={isLoading}
-              />
-              
-              {/* Swipe indicator */}
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1, duration: 0.5 }}
-                className="absolute top-1/2 right-4 -translate-y-1/2"
-              >
-                <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-full px-3 py-2 shadow-lg">
-                  <span className="text-xs font-medium">Desliza para chat</span>
-                  <ChevronRight className="w-4 h-4 animate-pulse" />
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="chat"
-            initial={{ x: 300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -300, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={(_, info) => {
-              if (info.offset.x > 100) handleSwipe("right")
-            }}
-            style={{ x, opacity }}
-            className="absolute inset-0 bg-background"
-          >
-            <div className="h-full w-full flex flex-col">
-              {/* Chat Header */}
-              <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur-sm">
-                <div className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
-                      <FiMessageSquare className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold">AI Assistant</h2>
-                      <p className="text-sm text-muted-foreground">
-                        {location} {query && `- ${query}`}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Swipe indicator */}
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    <ChevronLeft className="w-5 h-5 text-muted-foreground" />
-                  </motion.div>
-                </div>
-              </div>
-              
-              {/* Chat Content */}
-              <div className="flex-1 overflow-hidden">
-                {deviceType === "mobile" ? <ChatPanelMobile /> : <ChatPanel />}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className="fixed inset-0 bg-background">
+      {/* Header */}
+      <MobileHeader />
       
-      <MobileBottomTabs />
+      {/* Main content area */}
+      <div className="h-full pt-14 pb-20 overflow-hidden">
+        <div className="h-full flex flex-col">
+          {/* Map section - collapsible */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ 
+              opacity: isMapCollapsed ? 0 : 1,
+              height: isMapCollapsed ? "0vh" : "35vh",
+              scale: 1
+            }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="relative border-b bg-muted/20 overflow-hidden"
+          >
+            <AgencyMapOptimized
+              agencies={agencies}
+              searchLocation={searchCoordinates}
+              selectedAgencies={selectedForAnalysis}
+              onAgencySelect={handleSelectForAnalysis}
+              onStartAnalysis={handleStartAnalysis}
+              isLoading={isLoading}
+            />
+            
+            {/* Toggle button positioned at bottom center */}
+            <button
+              onClick={() => setIsMapCollapsed(!isMapCollapsed)}
+              className={cn(
+                "absolute bottom-0 left-1/2 -translate-x-1/2 z-20",
+                "bg-background/95 backdrop-blur-sm border border-b-0 rounded-t-lg",
+                "px-3 py-2 hover:bg-accent transition-all shadow-md",
+                "flex items-center gap-2"
+              )}
+            >
+              {isMapCollapsed ? (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  <span className="text-xs font-medium">Mostrar mapa</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  <span className="text-xs font-medium">Ocultar mapa</span>
+                </>
+              )}
+            </button>
+          </motion.div>
+          
+          {/* Chat section - remaining height */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.1 }}
+            className="flex-1 overflow-hidden bg-background relative"
+          >
+            {/* Show map toggle when collapsed */}
+            {isMapCollapsed && (
+              <motion.button
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: 0.2 }}
+                onClick={() => setIsMapCollapsed(false)}
+                className={cn(
+                  "absolute top-4 left-1/2 -translate-x-1/2 z-20",
+                  "bg-primary text-primary-foreground border rounded-full",
+                  "px-4 py-2 hover:bg-primary/90 transition-all shadow-lg",
+                  "flex items-center gap-2"
+                )}
+              >
+                <ChevronDown className="h-4 w-4" />
+                <span className="text-sm font-medium">Mostrar mapa</span>
+              </motion.button>
+            )}
+            
+            <ChatPanelMobile />
+          </motion.div>
+        </div>
+      </div>
+      
+      {/* Bottom navigation */}
+      <MobileBottomNav />
+      
+      {/* Agency detail modal */}
+      <AgencyDetail
+        agency={selectedAgency}
+        isOpen={!!selectedAgency}
+        onClose={() => setSelectedAgency(null)}
+        onSelectForAnalysis={(agency) => handleSelectForAnalysis(agency.id)}
+        selectedAgencies={selectedForAnalysis}
+        maxSelections={3}
+      />
     </div>
   )
 
