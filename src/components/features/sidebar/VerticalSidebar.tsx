@@ -20,6 +20,7 @@ import {
   FiTrendingUp,
   FiX 
 } from "react-icons/fi"
+import { SearchHistory } from "./SearchHistory"
 
 interface VerticalSidebarProps {
   onOpenSearch?: () => void
@@ -61,7 +62,7 @@ const SidebarContent = React.memo(({
     </div>
 
     {/* Navigation Section */}
-    <nav className="flex-1 p-4 space-y-1">
+    <nav className="p-4 space-y-1 border-b border-border/50">
       {navigationItems.map((item, index) => (
         <Button
           key={index}
@@ -74,6 +75,11 @@ const SidebarContent = React.memo(({
         </Button>
       ))}
     </nav>
+    
+    {/* Search History Section */}
+    <div className="flex-1 overflow-hidden">
+      <SearchHistory />
+    </div>
 
     {/* User Section */}
     <div className="p-4 border-t border-border/50 space-y-2">
