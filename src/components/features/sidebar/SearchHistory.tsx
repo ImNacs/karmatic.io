@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, memo } from 'react'
 import { useRouter } from 'next/navigation'
-import { FiSearch, FiClock, FiMapPin, FiX } from 'react-icons/fi'
+import { FiSearch, FiClock, FiMapPin, FiX, FiTrash2 } from 'react-icons/fi'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -27,16 +27,12 @@ interface SearchHistoryProps {
 }
 
 function SearchHistoryComponent({ className }: SearchHistoryProps) {
-  const { history, isLoading } = useSearchHistory()
+  const { history, isLoading, deleteSearch } = useSearchHistory()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const router = useRouter()
-  
-  // Debug log to verify data loading
-  useEffect(() => {
-    console.log('SearchHistory - Loading:', isLoading, 'History:', history)
-  }, [isLoading, history])
   
   // Memoize filtered history to prevent unnecessary recalculations
   const filteredHistory = useMemo(() => {
@@ -55,7 +51,15 @@ function SearchHistoryComponent({ className }: SearchHistoryProps) {
   }, [searchQuery, history])
   
   const handleSearchClick = (searchId: string) => {
+    if (deletingId === searchId) return // Prevent navigation while deleting
     router.push(`/explorer/${searchId}`)
+  }
+  
+  const handleDeleteClick = async (e: React.MouseEvent, searchId: string) => {
+    e.stopPropagation() // Prevent navigation
+    setDeletingId(searchId)
+    await deleteSearch(searchId)
+    setDeletingId(null)
   }
   
   const formatTime = (dateString: string) => {
@@ -190,53 +194,73 @@ function SearchHistoryComponent({ className }: SearchHistoryProps) {
               <div className="space-y-1">
                 <AnimatePresence mode="popLayout">
                   {group.searches.map((search, searchIndex) => (
-                    <motion.button
+                    <motion.div
                       key={search.id}
                       layout
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
+                      exit={{ opacity: 0, x: 20, scale: 0.8 }}
                       transition={{ 
                         duration: 0.2,
                         delay: searchIndex * 0.03
                       }}
-                      onClick={() => handleSearchClick(search.id)}
                       onMouseEnter={() => setHoveredId(search.id)}
                       onMouseLeave={() => setHoveredId(null)}
                       className={cn(
                         "w-full text-left p-3 rounded-lg transition-all duration-200",
-                        "hover:bg-accent/50 active:scale-[0.98]",
-                        "group relative overflow-hidden",
+                        "hover:bg-accent/50",
+                        "group relative cursor-pointer",
                         hoveredId === search.id && "bg-accent/30"
                       )}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
                     >
-                  <div className="flex items-start space-x-3">
-                    <div className={cn(
-                      "mt-0.5 p-1.5 rounded-md transition-colors duration-200",
-                      "bg-muted group-hover:bg-primary/10"
-                    )}>
-                      <FiMapPin className={cn(
-                        "h-3.5 w-3.5 transition-colors duration-200",
-                        "text-muted-foreground group-hover:text-primary"
-                      )} />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {search.location}
-                      </p>
-                      {search.query && (
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {search.query}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground/70 mt-1">
-                        {formatTime(search.createdAt)}
-                      </p>
-                    </div>
-                  </div>
+                      <div className="flex items-start space-x-3 w-full">
+                        <div className="flex flex-col items-center space-y-1">
+                          <div 
+                            className={cn(
+                              "p-1.5 rounded-md transition-colors duration-200",
+                              "bg-muted group-hover:bg-primary/10"
+                            )}
+                            onClick={() => handleSearchClick(search.id)}
+                          >
+                            <FiMapPin className={cn(
+                              "h-3.5 w-3.5 transition-colors duration-200",
+                              "text-muted-foreground group-hover:text-primary"
+                            )} />
+                          </div>
+                          
+                          {/* Delete button below location icon */}
+                          <button
+                            onClick={(e) => handleDeleteClick(e, search.id)}
+                            className={cn(
+                              "p-1 rounded-md transition-all duration-200",
+                              "hover:bg-red-100 dark:hover:bg-red-900/20",
+                              "text-muted-foreground hover:text-red-600 dark:hover:text-red-400",
+                              deletingId === search.id && "opacity-50 cursor-not-allowed",
+                              "opacity-0 group-hover:opacity-100"
+                            )}
+                            disabled={deletingId === search.id}
+                          >
+                            <FiTrash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                        
+                        <div 
+                          className="flex-1 min-w-0"
+                          onClick={() => handleSearchClick(search.id)}
+                        >
+                          <p className="text-sm font-medium truncate">
+                            {search.location}
+                          </p>
+                          {search.query && (
+                            <p className="text-xs text-muted-foreground truncate mt-0.5">
+                              {search.query}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground/70 mt-1">
+                            {formatTime(search.createdAt)}
+                          </p>
+                        </div>
+                      </div>
                   
                       {/* Hover effect gradient */}
                       <motion.div 
@@ -248,7 +272,7 @@ function SearchHistoryComponent({ className }: SearchHistoryProps) {
                         animate={{ opacity: hoveredId === search.id ? 1 : 0 }}
                         transition={{ duration: 0.3 }}
                       />
-                    </motion.button>
+                    </motion.div>
                   ))}
                 </AnimatePresence>
               </div>

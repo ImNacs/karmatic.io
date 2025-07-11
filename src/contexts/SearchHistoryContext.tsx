@@ -22,6 +22,7 @@ interface SearchHistoryContextType {
   addOptimisticSearch: (search: Omit<SearchItem, 'id' | 'createdAt'>) => string
   refreshHistory: () => Promise<void>
   updateSearchId: (tempId: string, realId: string) => void
+  deleteSearch: (searchId: string) => Promise<void>
 }
 
 const SearchHistoryContext = createContext<SearchHistoryContextType | undefined>(undefined)
@@ -149,12 +150,48 @@ export function SearchHistoryProvider({ children }: { children: React.ReactNode 
     await mutate()
   }, [mutate])
   
+  // Delete a search from history
+  const deleteSearch = useCallback(async (searchId: string) => {
+    // Optimistic update - remove immediately from UI
+    startTransition(() => {
+      mutate((currentData) => {
+        if (!currentData) return currentData
+        
+        return currentData.map(group => ({
+          ...group,
+          searches: group.searches.filter(search => search.id !== searchId)
+        })).filter(group => group.searches.length > 0)
+      }, {
+        revalidate: false // Don't refetch immediately
+      })
+    })
+    
+    try {
+      // Delete from server
+      const response = await fetch(`/api/search/history/${searchId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+      
+      if (!response.ok) {
+        console.error('Failed to delete search:', response.status)
+        // Revalidate to restore the item if delete failed
+        mutate()
+      }
+    } catch (error) {
+      console.error('Error deleting search:', error)
+      // Revalidate to restore the item
+      mutate()
+    }
+  }, [mutate])
+  
   const value: SearchHistoryContextType = {
     history: optimisticHistory,
     isLoading,
     addOptimisticSearch,
     refreshHistory,
-    updateSearchId
+    updateSearchId,
+    deleteSearch
   }
   
   return (
