@@ -9,7 +9,7 @@ interface PageProps {
 }
 
 export default async function ExplorerSearchPage({ params }: PageProps) {
-  const { search_id } = params
+  const { search_id } = await params
   
   try {
     // Load search from database
