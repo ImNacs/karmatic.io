@@ -4,7 +4,7 @@ import * as React from "react"
 import { FiMoon, FiSun } from "react-icons/fi"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "motion/react"
 
 /**
  * ThemeToggle - Button to switch between light and dark themes

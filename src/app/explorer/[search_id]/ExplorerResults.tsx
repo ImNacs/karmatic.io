@@ -284,7 +284,6 @@ export default function ExplorerResults({
             </Card>
           </div>
       )}
-    </>
 
       <AgencyDetail
         agency={selectedAgency}

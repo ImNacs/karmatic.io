@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from 'react'
 import { AdvancedMarker, useMap } from '@vis.gl/react-google-maps'
 import { MarkerClusterer } from '@googlemaps/markerclusterer'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import { AgencyMarker } from './AgencyMarker'
 import type { Agency } from '@/types/agency'
 

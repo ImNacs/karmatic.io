@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { useMap, InfoWindow, APILoadingStatus, useApiLoadingStatus } from '@vis.gl/react-google-maps'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'motion/react'
 import { AgencyCardLocationMapEnhanced } from '@/components/features/agency-card'
 import { AgencyComparison } from '@/components/features/agency-comparison'
 import { MapMarkers } from './Markers/MapMarkers'

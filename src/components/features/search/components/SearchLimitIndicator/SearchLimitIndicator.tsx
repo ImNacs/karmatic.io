@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'motion/react'
 import { FiSearch, FiLock, FiUnlock } from 'react-icons/fi'
 import { cn } from '@/lib/utils'
 

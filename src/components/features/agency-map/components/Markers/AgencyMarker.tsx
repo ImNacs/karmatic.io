@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { AdvancedMarker } from '@vis.gl/react-google-maps'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import { FiMapPin, FiCheck } from 'react-icons/fi'
 import type { Agency } from '@/types/agency'
 
