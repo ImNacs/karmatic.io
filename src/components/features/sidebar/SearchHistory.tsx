@@ -1,13 +1,14 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { FiSearch, FiClock, FiMapPin, FiX } from 'react-icons/fi'
-import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useSearchHistory } from '@/contexts/SearchHistoryContext'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface SearchItem {
   id: string
@@ -23,22 +24,22 @@ interface SearchGroup {
 
 interface SearchHistoryProps {
   className?: string
-  refreshTrigger?: number
 }
 
-export function SearchHistory({ className, refreshTrigger }: SearchHistoryProps) {
-  const [history, setHistory] = useState<SearchGroup[]>([])
-  const [filteredHistory, setFilteredHistory] = useState<SearchGroup[]>([])
-  const [loading, setLoading] = useState(true)
+export function SearchHistory({ className }: SearchHistoryProps) {
+  const { history, isLoading } = useSearchHistory()
+  const [filteredHistory, setFilteredHistory] = useState(history)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const router = useRouter()
   
+  // Update filtered history when history changes
   useEffect(() => {
-    fetchSearchHistory()
-  }, [refreshTrigger])
+    setFilteredHistory(history)
+  }, [history])
   
+  // Filter history based on search query
   useEffect(() => {
     if (searchQuery.trim() === '') {
       setFilteredHistory(history)
@@ -55,21 +56,6 @@ export function SearchHistory({ className, refreshTrigger }: SearchHistoryProps)
       setFilteredHistory(filtered)
     }
   }, [searchQuery, history])
-  
-  const fetchSearchHistory = async () => {
-    try {
-      const response = await fetch('/api/search/history')
-      if (response.ok) {
-        const data = await response.json()
-        setHistory(data.searches || [])
-        setFilteredHistory(data.searches || [])
-      }
-    } catch (error) {
-      console.error('Error fetching search history:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
   
   const handleSearchClick = (searchId: string) => {
     router.push(`/explorer/${searchId}`)
@@ -93,14 +79,19 @@ export function SearchHistory({ className, refreshTrigger }: SearchHistoryProps)
     })
   }
   
-  if (loading) {
+  // Only show loading on initial load, not on updates
+  if (isLoading && history.length === 0) {
     return (
       <div className={cn("space-y-4 p-4", className)}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+          <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+        </div>
         <div className="space-y-3">
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2, 3].map((i) => (
             <div key={i} className="space-y-2">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-12 w-full" />
+              <div className="h-3 w-16 bg-muted animate-pulse rounded" />
+              <div className="h-11 w-full bg-muted animate-pulse rounded-lg" />
             </div>
           ))}
         </div>
@@ -165,32 +156,61 @@ export function SearchHistory({ className, refreshTrigger }: SearchHistoryProps)
           )}
         </div>
         
-        {filteredHistory.length === 0 && searchQuery && (
-          <div className="text-center py-6 text-muted-foreground">
-            <p className="text-sm">No se encontraron resultados para "{searchQuery}"</p>
-          </div>
-        )}
-        
-        {filteredHistory.map((group, groupIndex) => (
-          <div key={groupIndex} className="space-y-2">
-            <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              {group.label}
-            </h4>
-            
-            <div className="space-y-1">
-              {group.searches.map((search) => (
-                <button
-                  key={search.id}
-                  onClick={() => handleSearchClick(search.id)}
-                  onMouseEnter={() => setHoveredId(search.id)}
-                  onMouseLeave={() => setHoveredId(null)}
-                  className={cn(
-                    "w-full text-left p-3 rounded-lg transition-all duration-200",
-                    "hover:bg-accent/50 hover:scale-[1.02] active:scale-[0.98]",
-                    "group relative overflow-hidden",
-                    hoveredId === search.id && "bg-accent/30"
-                  )}
-                >
+        <AnimatePresence mode="popLayout">
+          {filteredHistory.length === 0 && searchQuery && (
+            <motion.div 
+              key="no-results"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.15 }}
+              className="text-center py-6 text-muted-foreground"
+            >
+              <p className="text-sm">No se encontraron resultados para "{searchQuery}"</p>
+            </motion.div>
+          )}
+          
+          {filteredHistory.map((group, groupIndex) => (
+            <motion.div 
+              key={`${group.label}-${groupIndex}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ 
+                duration: 0.2,
+                delay: groupIndex * 0.05
+              }}
+              className="space-y-2"
+            >
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {group.label}
+              </h4>
+              
+              <div className="space-y-1">
+                <AnimatePresence mode="popLayout">
+                  {group.searches.map((search, searchIndex) => (
+                    <motion.button
+                      key={search.id}
+                      layout
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ 
+                        duration: 0.2,
+                        delay: searchIndex * 0.03
+                      }}
+                      onClick={() => handleSearchClick(search.id)}
+                      onMouseEnter={() => setHoveredId(search.id)}
+                      onMouseLeave={() => setHoveredId(null)}
+                      className={cn(
+                        "w-full text-left p-3 rounded-lg transition-all duration-200",
+                        "hover:bg-accent/50 active:scale-[0.98]",
+                        "group relative overflow-hidden",
+                        hoveredId === search.id && "bg-accent/30"
+                      )}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
                   <div className="flex items-start space-x-3">
                     <div className={cn(
                       "mt-0.5 p-1.5 rounded-md transition-colors duration-200",
@@ -217,17 +237,23 @@ export function SearchHistory({ className, refreshTrigger }: SearchHistoryProps)
                     </div>
                   </div>
                   
-                  {/* Hover effect gradient */}
-                  <div className={cn(
-                    "absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent",
-                    "opacity-0 group-hover:opacity-100 transition-opacity duration-300",
-                    "pointer-events-none"
-                  )} />
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
+                      {/* Hover effect gradient */}
+                      <motion.div 
+                        className={cn(
+                          "absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent",
+                          "pointer-events-none"
+                        )}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: hoveredId === search.id ? 1 : 0 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </motion.button>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </ScrollArea>
   )

@@ -12,6 +12,7 @@ import { useSearchLimit } from "@/components/features/search/hooks/useSearchLimi
 import { trackEvent } from "@/lib/gtm/gtm"
 import { n8nApi } from "@/lib/n8n-api"
 import { useGooglePlaces } from "@/lib/google-places"
+import { useSearchHistory } from "@/contexts/SearchHistoryContext"
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
@@ -20,6 +21,7 @@ export default function Home() {
   
   const { canSearch, isAuthenticated } = useSearchLimit()
   const { getPlaceDetails } = useGooglePlaces()
+  const { addOptimisticSearch, updateSearchId } = useSearchHistory()
   const router = useRouter()
 
   const handleSearch = async (data: SearchData) => {
@@ -54,7 +56,16 @@ export default function Home() {
         }
       }
       
-      // Execute search
+      // Add optimistic search immediately for instant UI update
+      const tempId = addOptimisticSearch({
+        location: data.location,
+        query: data.query || null
+      })
+      
+      // Navigate immediately with temporary ID for instant feedback
+      router.push(`/explorer/${tempId}`)
+      
+      // Execute search in background
       let searchResults
       
       if (!n8nApi.isConfigured()) {
@@ -96,12 +107,18 @@ export default function Home() {
       
       const { searchId } = await response.json()
       
-      // Navigate to explorer with search ID
-      router.push(`/explorer/${searchId}`)
+      // Update the temporary ID with the real ID
+      updateSearchId(tempId, searchId)
+      
+      // Update URL with real ID without full navigation
+      window.history.replaceState({}, '', `/explorer/${searchId}`)
       
     } catch (error) {
       console.error('Error processing search:', error)
       toast.error('Error al procesar la búsqueda')
+      // Navigate back to home on error
+      router.push('/')
+    } finally {
       setIsLoading(false)
     }
   }

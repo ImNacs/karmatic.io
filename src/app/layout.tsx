@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { GoogleMapsProvider } from "@/providers/google-maps-provider";
 import { AuthSync } from "@/components/features/auth";
 import { GTMScript, GTMNoScript } from "@/lib/gtm/gtm";
+import { SearchHistoryProvider } from "@/contexts/SearchHistoryContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -87,8 +88,10 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <GoogleMapsProvider>
-              <AuthSync />
-              {children}
+              <SearchHistoryProvider>
+                <AuthSync />
+                {children}
+              </SearchHistoryProvider>
             </GoogleMapsProvider>
             <Toaster />
           </ThemeProvider>
