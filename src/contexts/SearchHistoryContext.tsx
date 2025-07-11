@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useOptimistic, useCallback } from 'react'
+import React, { createContext, useContext, useState, useOptimistic, useCallback, startTransition } from 'react'
 import { nanoid } from 'nanoid'
 import useSWR from 'swr'
 
@@ -52,6 +52,9 @@ function insertSearchAtTop(history: SearchGroup[], newSearch: SearchItem): Searc
     updatedHistory.unshift(todayGroup)
   }
   
+  // Remove any existing search with the same ID to prevent duplicates
+  todayGroup.searches = todayGroup.searches.filter(s => s.id !== newSearch.id)
+  
   // Add new search at the beginning of today's searches
   todayGroup.searches.unshift(newSearch)
   
@@ -60,10 +63,21 @@ function insertSearchAtTop(history: SearchGroup[], newSearch: SearchItem): Searc
 
 // Fetcher for SWR
 const fetcher = async (url: string) => {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error('Failed to fetch')
-  const data = await res.json()
-  return data.searches || []
+  try {
+    const res = await fetch(url, {
+      credentials: 'include', // Include cookies for anonymous tracking
+    })
+    if (!res.ok) {
+      console.error('Failed to fetch search history:', res.status)
+      throw new Error('Failed to fetch')
+    }
+    const data = await res.json()
+    console.log('Fetched search history:', data)
+    return data.searches || []
+  } catch (error) {
+    console.error('Error in fetcher:', error)
+    return []
+  }
 }
 
 export function SearchHistoryProvider({ children }: { children: React.ReactNode }) {
@@ -76,7 +90,6 @@ export function SearchHistoryProvider({ children }: { children: React.ReactNode 
       revalidateOnReconnect: false,
       dedupingInterval: 60000, // Dedupe requests for 1 minute
       refreshInterval: 0, // No automatic refresh
-      revalidateOnMount: false, // Don't refetch on mount if data exists
     }
   )
   
@@ -97,8 +110,11 @@ export function SearchHistoryProvider({ children }: { children: React.ReactNode 
       createdAt: new Date().toISOString()
     }
     
-    // Add to optimistic state immediately
-    addOptimistic(newSearch)
+    // Wrap optimistic update in startTransition
+    startTransition(() => {
+      // Add to optimistic state immediately
+      addOptimistic(newSearch)
+    })
     
     // Also update SWR cache to prevent flicker when optimistic state resolves
     mutate((currentData) => {

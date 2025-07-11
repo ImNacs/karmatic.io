@@ -33,6 +33,11 @@ function SearchHistoryComponent({ className }: SearchHistoryProps) {
   const [showSearch, setShowSearch] = useState(false)
   const router = useRouter()
   
+  // Debug log to verify data loading
+  useEffect(() => {
+    console.log('SearchHistory - Loading:', isLoading, 'History:', history)
+  }, [isLoading, history])
+  
   // Memoize filtered history to prevent unnecessary recalculations
   const filteredHistory = useMemo(() => {
     if (searchQuery.trim() === '') {
