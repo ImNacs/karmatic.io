@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { useUser, useClerk, SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
+import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -141,6 +142,8 @@ export function VerticalSidebar({ onOpenSearch, userTokens = 150 }: VerticalSide
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { user } = useUser()
   const { signOut } = useClerk()
+  const router = useRouter()
+  const pathname = usePathname()
   
   // Prevent hydration mismatch
   useEffect(() => {
@@ -151,9 +154,13 @@ export function VerticalSidebar({ onOpenSearch, userTokens = 150 }: VerticalSide
     setTheme(theme === "dark" ? "light" : "dark")
   }
 
+  const handleNewSearch = () => {
+    router.push('/')
+  }
+
   const navigationItems = [
-    { icon: FiHome, label: "Inicio", onClick: () => {} },
-    { icon: FiSearch, label: "Nueva búsqueda", onClick: onOpenSearch || (() => {}) },
+    { icon: FiHome, label: "Inicio", onClick: () => router.push('/') },
+    { icon: FiSearch, label: "Nueva búsqueda", onClick: handleNewSearch },
     { icon: FiBookmark, label: "Guardados", onClick: () => {} },
     { icon: FiTrendingUp, label: "Descubrir", onClick: () => {} },
   ]
@@ -191,7 +198,7 @@ export function VerticalSidebar({ onOpenSearch, userTokens = 150 }: VerticalSide
             <Button
               variant="ghost"
               size="sm"
-              onClick={onOpenSearch}
+              onClick={handleNewSearch}
               className="h-8 w-8 p-0"
             >
               <FiSearch className="h-4 w-4" />
