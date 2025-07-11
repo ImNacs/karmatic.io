@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import { FiSearch, FiClock, FiMapPin, FiX } from 'react-icons/fi'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSearchHistory } from '@/contexts/SearchHistoryContext'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'motion/react'
 
 interface SearchItem {
   id: string
@@ -26,35 +26,27 @@ interface SearchHistoryProps {
   className?: string
 }
 
-export function SearchHistory({ className }: SearchHistoryProps) {
+function SearchHistoryComponent({ className }: SearchHistoryProps) {
   const { history, isLoading } = useSearchHistory()
-  const [filteredHistory, setFilteredHistory] = useState(history)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const router = useRouter()
   
-  // Update filtered history when history changes
-  useEffect(() => {
-    setFilteredHistory(history)
-  }, [history])
-  
-  // Filter history based on search query
-  useEffect(() => {
+  // Memoize filtered history to prevent unnecessary recalculations
+  const filteredHistory = useMemo(() => {
     if (searchQuery.trim() === '') {
-      setFilteredHistory(history)
-    } else {
-      const query = searchQuery.toLowerCase()
-      const filtered = history.map(group => ({
-        ...group,
-        searches: group.searches.filter(search => 
-          search.location.toLowerCase().includes(query) ||
-          (search.query && search.query.toLowerCase().includes(query))
-        )
-      })).filter(group => group.searches.length > 0)
-      
-      setFilteredHistory(filtered)
+      return history
     }
+    
+    const query = searchQuery.toLowerCase()
+    return history.map(group => ({
+      ...group,
+      searches: group.searches.filter(search => 
+        search.location.toLowerCase().includes(query) ||
+        (search.query && search.query.toLowerCase().includes(query))
+      )
+    })).filter(group => group.searches.length > 0)
   }, [searchQuery, history])
   
   const handleSearchClick = (searchId: string) => {
@@ -123,7 +115,11 @@ export function SearchHistory({ className }: SearchHistoryProps) {
   
   return (
     <ScrollArea className={cn("h-full", className)}>
-      <div className="p-4 space-y-4">
+      <motion.div 
+        className="p-4 space-y-4"
+        initial={false}
+        animate={{ opacity: 1 }}
+      >
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-muted-foreground">Búsquedas recientes</h3>
@@ -254,7 +250,10 @@ export function SearchHistory({ className }: SearchHistoryProps) {
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
+      </motion.div>
     </ScrollArea>
   )
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export const SearchHistory = memo(SearchHistoryComponent)

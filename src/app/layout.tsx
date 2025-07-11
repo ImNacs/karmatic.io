@@ -8,6 +8,7 @@ import { GoogleMapsProvider } from "@/providers/google-maps-provider";
 import { AuthSync } from "@/components/features/auth";
 import { GTMScript, GTMNoScript } from "@/lib/gtm/gtm";
 import { SearchHistoryProvider } from "@/contexts/SearchHistoryContext";
+import { VerticalSidebar } from "@/components/features/sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -90,7 +91,12 @@ export default function RootLayout({
             <GoogleMapsProvider>
               <SearchHistoryProvider>
                 <AuthSync />
-                {children}
+                <div className="min-h-screen bg-background">
+                  <VerticalSidebar userTokens={150} />
+                  <main className="lg:ml-64">
+                    {children}
+                  </main>
+                </div>
               </SearchHistoryProvider>
             </GoogleMapsProvider>
             <Toaster />

@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { VerticalSidebar } from "@/components/features/sidebar"
 import { AgencyMapOptimized } from "@/components/features/agency-map"
 import { AgencyDetail } from "@/components/features/agency-detail"
 import { LoadingScreen } from "@/components/common/loading-screen"
@@ -174,27 +173,21 @@ export default function ExplorerResults({
   const selectedAgenciesData = agencies.filter(agency => selectedForAnalysis.includes(agency.id))
 
   return (
-    <div className="min-h-screen bg-background">
-      <VerticalSidebar 
-        onOpenSearch={handleNewSearch}
-        userTokens={150}
-      />
-      
-      <main className="lg:ml-64">
-        {currentStep === "results" && (
-          <div className="fixed inset-0 lg:left-64 bg-background">
-            <AgencyMapOptimized
+    <>
+      {currentStep === "results" && (
+        <div className="fixed inset-0 bg-background">
+          <AgencyMapOptimized
               agencies={agencies}
               searchLocation={searchCoordinates}
               selectedAgencies={selectedForAnalysis}
               onAgencySelect={handleSelectForAnalysis}
               onStartAnalysis={handleStartAnalysis}
               isLoading={isLoading}
-            />
-          </div>
-        )}
+          />
+        </div>
+      )}
 
-        {currentStep === "analysis" && (
+      {currentStep === "analysis" && (
           <div className="container mx-auto px-4 py-8 space-y-6">
             <div className="flex items-center justify-between">
               <div>
@@ -290,8 +283,8 @@ export default function ExplorerResults({
               </div>
             </Card>
           </div>
-        )}
-      </main>
+      )}
+    </>
 
       <AgencyDetail
         agency={selectedAgency}
@@ -312,6 +305,6 @@ export default function ExplorerResults({
           }
         />
       )}
-    </div>
+    </>
   )
 }

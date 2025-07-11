@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { VerticalSidebar } from "@/components/features/sidebar"
 import { SearchInterface } from "@/components/features/search"
 import { LoadingScreen } from "@/components/common/loading-screen"
 import { RegistrationModal } from "@/components/features/auth"
@@ -124,17 +123,13 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <VerticalSidebar userTokens={150} />
-      
-      <main className="lg:ml-64 container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <SearchInterface 
-            onSearch={handleSearch} 
-            isLoading={isLoading}
-          />
-        </div>
-      </main>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <SearchInterface 
+          onSearch={handleSearch} 
+          isLoading={isLoading}
+        />
+      </div>
 
       <RegistrationModal
         isOpen={showRegistrationModal}

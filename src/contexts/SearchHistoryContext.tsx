@@ -67,8 +67,6 @@ const fetcher = async (url: string) => {
 }
 
 export function SearchHistoryProvider({ children }: { children: React.ReactNode }) {
-  const [tempIdMap, setTempIdMap] = useState<Map<string, string>>(new Map())
-  
   // Use SWR for efficient caching and automatic revalidation
   const { data: history = [], isLoading, mutate } = useSWR<SearchGroup[]>(
     '/api/search/history',
@@ -78,6 +76,7 @@ export function SearchHistoryProvider({ children }: { children: React.ReactNode 
       revalidateOnReconnect: false,
       dedupingInterval: 60000, // Dedupe requests for 1 minute
       refreshInterval: 0, // No automatic refresh
+      revalidateOnMount: false, // Don't refetch on mount if data exists
     }
   )
   
@@ -101,23 +100,33 @@ export function SearchHistoryProvider({ children }: { children: React.ReactNode 
     // Add to optimistic state immediately
     addOptimistic(newSearch)
     
+    // Also update SWR cache to prevent flicker when optimistic state resolves
+    mutate((currentData) => {
+      if (!currentData) return insertSearchAtTop([], newSearch)
+      return insertSearchAtTop(currentData, newSearch)
+    }, {
+      revalidate: false // Don't refetch from server
+    })
+    
     return tempId
-  }, [addOptimistic])
+  }, [addOptimistic, mutate])
   
   // Update temporary ID with real ID after server response
   const updateSearchId = useCallback((tempId: string, realId: string) => {
-    setTempIdMap(prev => new Map(prev).set(tempId, realId))
-    
-    // Update the history with the real ID
-    setHistory(currentHistory => {
-      return currentHistory.map(group => ({
+    // Update the optimistic data with real ID without refetching
+    mutate((currentData) => {
+      if (!currentData) return currentData
+      
+      return currentData.map(group => ({
         ...group,
         searches: group.searches.map(search => 
           search.id === tempId ? { ...search, id: realId } : search
         )
       }))
+    }, {
+      revalidate: false // Don't refetch from server
     })
-  }, [])
+  }, [mutate])
   
   // Refresh history from server
   const refreshHistory = useCallback(async () => {
