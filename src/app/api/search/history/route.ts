@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
       
       if (user) {
         searchHistory = await prisma.searchHistory.findMany({
-          where: { userId: user.id },
+          where: { 
+            userId: user.id,
+            deletedAt: null // Exclude soft-deleted items
+          },
           orderBy: { createdAt: 'desc' },
           take: 50, // Last 50 searches
           select: {
@@ -49,7 +52,10 @@ export async function GET(request: NextRequest) {
       
       if (anonymousSearch) {
         searchHistory = await prisma.searchHistory.findMany({
-          where: { anonymousId: anonymousSearch.id },
+          where: { 
+            anonymousId: anonymousSearch.id,
+            deletedAt: null // Exclude soft-deleted items
+          },
           orderBy: { createdAt: 'desc' },
           take: 20, // Less for anonymous users
           select: {
