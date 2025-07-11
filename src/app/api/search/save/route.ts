@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { nanoid } from 'nanoid'
+import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,10 +48,22 @@ export async function POST(request: NextRequest) {
     
     // For anonymous users (or failed sync), create or get anonymous record
     if (!dbUserId) {
-      // Generate a unique identifier for anonymous user
-      const identifier = request.headers.get('x-forwarded-for') || 
-                        request.headers.get('x-real-ip') || 
-                        'anonymous_' + nanoid(10)
+      // Get or create anonymous identifier from cookies
+      const cookieStore = await cookies()
+      let identifier = cookieStore.get('anonymous-id')?.value
+      
+      if (!identifier) {
+        // Generate new identifier and set cookie
+        identifier = 'anon_' + nanoid(10)
+        cookieStore.set('anonymous-id', identifier, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 365 // 1 year
+        })
+      }
+      
+      console.log('Anonymous save identifier:', identifier)
       
       // Check if anonymous user exists or create new one
       const anonymousSearch = await prisma.anonymousSearch.upsert({

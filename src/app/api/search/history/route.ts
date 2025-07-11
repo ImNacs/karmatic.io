@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
+import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,10 +29,19 @@ export async function GET(request: NextRequest) {
         })
       }
     } else {
-      // Get anonymous user's search history based on identifier
-      const identifier = request.headers.get('x-forwarded-for') || 
-                        request.headers.get('x-real-ip') || 
-                        'anonymous'
+      // Get anonymous user's search history based on cookie
+      const cookieStore = await cookies()
+      const identifier = cookieStore.get('anonymous-id')?.value
+      
+      console.log('Anonymous history identifier:', identifier)
+      
+      if (!identifier) {
+        // No anonymous identifier, return empty history
+        return NextResponse.json({
+          searches: grouped,
+          total: 0
+        })
+      }
       
       const anonymousSearch = await prisma.anonymousSearch.findUnique({
         where: { identifier }
