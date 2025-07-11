@@ -1,20 +1,23 @@
 # Karmatic - AI-Powered Automotive Agency Discovery Platform
 
-A modern application for discovering, analyzing, and selecting the best automotive agencies. Built with a focus on user experience inspired by Airbnb, Perplexity, Uber, and Bumble, featuring intelligent search limiting and comprehensive analytics.
+A modern application for discovering, analyzing, and selecting the best automotive agencies. Built with a focus on user experience inspired by Airbnb, Perplexity, Uber, and Bumble, featuring intelligent search limiting, comprehensive analytics, and a premium routed architecture.
 
 ## 🚀 Project Status
 
-**Current Version:** 0.1.0  
-**Stage:** Production-Ready MVP with Authentication & Search Limiting  
+**Current Version:** 0.2.0  
+**Stage:** Production-Ready with Advanced Routing & Search History  
 **Last Updated:** January 2025
 
 ### ✅ Implemented Features
 - Full authentication system with Clerk
+- **Routed application architecture** (like YouLearn.ai)
+- **Search history with instant updates** (like Perplexity/ChatGPT)
+- **Soft delete system** for data recovery
 - Search limiting for anonymous users (1 search/24h)
 - Database integration with Supabase/Prisma
-- Google Maps/Places API integration
+- Google Maps/Places API integration with dark mode
 - GTM analytics tracking
-- Responsive design with dark mode
+- Responsive design with persistent sidebar
 - PWA capabilities
 - Comprehensive test coverage
 
@@ -33,6 +36,12 @@ A modern application for discovering, analyzing, and selecting the best automoti
 - **Session Management** - Seamless transition from anonymous to authenticated
 
 ### 🔍 Smart Search System
+- **Routed Search Experience** - Each search has its own URL (`/explorer/[search_id]`)
+- **Search History Sidebar** - Instant access to previous searches with:
+  - Time-based grouping (Today, Yesterday, Last Week)
+  - Search within history
+  - One-click delete with soft delete recovery
+  - Smooth animations and transitions
 - **Location-Based Search** - Find agencies near you with Google Places
 - **Search Limiting** - Intelligent rate limiting for anonymous users:
   - 1 free search per 24 hours for anonymous users
@@ -81,6 +90,8 @@ A modern application for discovering, analyzing, and selecting the best automoti
 - **API:** Next.js API Routes
 - **Webhooks:** Clerk webhooks for user sync
 - **Session Management:** Cookie-based with nanoid
+- **Soft Delete:** 30-day recovery period for deleted data
+- **State Management:** React Context + SWR for data fetching
 
 ### Development & Testing
 - **Testing:** Jest + React Testing Library + Playwright
@@ -137,6 +148,9 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key
 
 # GTM (optional)
 NEXT_PUBLIC_GTM_ID=GTM-XXXXXX
+
+# Cleanup Job (optional)
+CLEANUP_SECRET_KEY=your_secret_key_for_cleanup_job
 ```
 
 5. Set up the database:
@@ -181,15 +195,23 @@ karmatic/
 │   │   ├── api/                 # API endpoints
 │   │   │   ├── auth/           # Authentication endpoints
 │   │   │   ├── search/         # Search-related APIs
+│   │   │   │   ├── save/       # Save search endpoint
+│   │   │   │   ├── history/   # Search history endpoints
+│   │   │   │   └── cleanup/   # Soft delete cleanup
 │   │   │   └── webhooks/       # Webhook handlers
 │   │   ├── (auth)/             # Auth pages (sign-in/up)
+│   │   ├── explorer/           # Search results pages
+│   │   │   └── [search_id]/    # Dynamic search routes
 │   │   ├── profile/            # User profile
-│   │   └── layout.tsx          # Root layout
+│   │   └── layout.tsx          # Root layout with sidebar
 │   ├── components/              # React components
 │   │   ├── ui/                 # Base UI components
-│   │   ├── auth-*.tsx          # Auth-related components
-│   │   ├── agency-*.tsx        # Agency-related components
+│   │   ├── features/           # Feature components
+│   │   │   ├── sidebar/        # Search history sidebar
+│   │   │   └── agency-map/     # Map components
 │   │   └── search-*.tsx        # Search components
+│   ├── contexts/                # React contexts
+│   │   └── SearchHistoryContext.tsx
 │   ├── hooks/                   # Custom React hooks
 │   ├── lib/                     # Utilities and helpers
 │   │   ├── auth/               # Auth utilities
@@ -201,7 +223,7 @@ karmatic/
 │   ├── schema.prisma           # Database schema
 │   └── migrations/             # Database migrations
 ├── public/                      # Static assets
-└── tests/                       # Test files
+└── src/__tests__/               # Test files
 ```
 
 ## 🧪 Testing
@@ -252,10 +274,13 @@ pnpm test:e2e
 
 ### Phase 1 (Completed) ✅
 - [x] Core search functionality
-- [x] Google Maps integration
+- [x] Google Maps integration with dark mode
 - [x] User authentication
 - [x] Search limiting system
 - [x] Basic agency profiles
+- [x] Routed architecture with unique URLs
+- [x] Search history with instant updates
+- [x] Soft delete with recovery
 
 ### Phase 2 (Current) 🚧
 - [ ] AI-powered chat interface
