@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       if (!identifier) {
         // No anonymous identifier, return empty history
         return NextResponse.json({
-          searches: grouped,
+          searches: [],
           total: 0
         })
       }
