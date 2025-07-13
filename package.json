@@ -25,6 +25,7 @@
     "@hookform/resolvers": "^5.1.1",
     "@mastra/core": "^0.10.12",
     "@mastra/memory": "^0.11.2",
+    "@mastra/pg": "^0.12.2",
     "@prisma/client": "^6.11.1",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.14",
