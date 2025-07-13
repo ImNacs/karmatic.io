@@ -19,27 +19,26 @@
 
 import { Mastra } from "@mastra/core/mastra";
 import { karmaticAssistant } from "./agents/karmatic-assistant";
+import { karmaticTools } from "./tools";
+import { karmaticWorkflows } from "./workflows";
 
 /**
  * Instancia principal de Mastra configurada con todos los componentes
  * 
  * @remarks
  * Esta instancia está preconfigurada con:
- * - Agentes: karmaticAssistant
- * - Herramientas: (por implementar)
- * - Workflows: (por implementar)
+ * - Agentes: karmaticAssistant (con memory y tools integrados)
+ * - Herramientas: searchDealerships, analyzeDealership, getVehicleInventory, etc.
+ * - Workflows: vehicleSearchWorkflow, dealershipAnalysisWorkflow, recommendationWorkflow
  * 
  * Para agregar nuevos agentes, importarlos y agregarlos al objeto agents.
  */
 export const mastra = new Mastra({
   agents: { 
     karmaticAssistant 
-  }
-  // TODO: Agregar tools cuando se implementen
-  // tools: { ... }
-  
-  // TODO: Agregar workflows cuando se implementen
-  // workflows: { ... }
+  },
+  tools: karmaticTools,
+  workflows: karmaticWorkflows,
 });
 
 // Exportar la instancia para usar en la app

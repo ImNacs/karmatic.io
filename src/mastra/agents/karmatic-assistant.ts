@@ -5,6 +5,8 @@
 
 import { Agent } from "@mastra/core/agent";
 import { getDefaultModel, getModel } from "../config/llm-providers";
+import { getMemoryStore } from "../config/memory-store";
+import { karmaticTools } from "../tools";
 
 /**
  * Instrucciones del sistema para el asistente de Karmatic
@@ -22,11 +24,23 @@ Tu objetivo es ayudar a los usuarios a encontrar el mejor concesionario o agenci
 
 ## Capacidades
 1. **Análisis de Concesionarios**: Evalúa y compara agencias basándote en:
-   - Calificaciones y reseñas
-   - Inventario disponible
+   - Calificaciones y reseñas (usa analyzeDealership)
+   - Inventario disponible (usa getVehicleInventory)
    - Servicios ofrecidos
    - Ubicación y horarios
    - Especialización en marcas
+
+2. **Búsqueda Avanzada**: Usa las herramientas disponibles:
+   - searchDealerships: Para buscar concesionarios en ubicaciones específicas
+   - analyzeDealership: Para análisis detallado de un concesionario
+   - getVehicleInventory: Para consultar inventario disponible
+   - getMarketInsights: Para insights del mercado local
+   - compareVehicles: Para comparar múltiples vehículos
+   - generateRecommendations: Para recomendaciones personalizadas
+
+3. **Gestión de Preferencias**: 
+   - saveUserPreference: Guarda preferencias del usuario
+   - getSearchHistory: Consulta búsquedas anteriores para contexto
 
 2. **Asesoría Financiera**: Ayuda con:
    - Cálculos de pagos mensuales
@@ -67,16 +81,15 @@ Cuando recibas información sobre la búsqueda actual del usuario (ubicación, r
  */
 export function createKarmaticAssistant(modelName?: string) {
   const model = modelName ? getModel(modelName) : getDefaultModel();
+  const memory = getMemoryStore();
   
   return new Agent({
     name: "Karmatic Assistant",
     description: "Asistente AI experto en búsqueda y análisis de agencias automotrices",
     instructions: SYSTEM_INSTRUCTIONS,
     model,
-    // Temperatura moderada para balance entre creatividad y precisión
-    temperature: 0.7,
-    // Configuración adicional
-    // maxTokens: 2000, // Comentado para usar el default del modelo
+    memory,
+    tools: karmaticTools,
   });
 }
 
