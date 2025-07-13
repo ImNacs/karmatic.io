@@ -249,6 +249,10 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
     addMessageToSearch(currentSearchId, userMessage)
     setTypingForSearch(currentSearchId, true)
     
+    // Create assistant message ID in advance for streaming
+    const assistantMessageId = `assistant-${currentSearchId}-${Date.now()}`
+    let streamedContent = ''
+    
     try {
       // Convert messages to API format, including the new user message
       const allMessages = [...getMessagesForSearch(currentSearchId), userMessage]
@@ -270,33 +274,116 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
         })
       })
       
-      const data = await response.json()
-      
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${currentSearchId}-${Date.now()}`,
-        type: 'assistant',
-        content: data.message?.content || data.response || 'No pude procesar tu mensaje.',
-        timestamp: new Date(),
-        metadata: data.message?.metadata || data.metadata
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to get response')
       }
       
-      // Add assistant response to specific search
-      addMessageToSearch(currentSearchId, assistantMessage)
+      // Check if response is streaming
+      const contentType = response.headers.get('content-type')
+      
+      if (contentType?.includes('text/event-stream') || response.body) {
+        // Handle streaming response
+        const reader = response.body?.getReader()
+        const decoder = new TextDecoder()
+        
+        // Add initial empty assistant message
+        const assistantMessage: ChatMessage = {
+          id: assistantMessageId,
+          type: 'assistant',
+          content: '',
+          timestamp: new Date()
+        }
+        addMessageToSearch(currentSearchId, assistantMessage)
+        
+        if (reader) {
+          try {
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              
+              const chunk = decoder.decode(value)
+              const lines = chunk.split('\n')
+              
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6)
+                  if (data === '[DONE]') continue
+                  
+                  try {
+                    const parsed = JSON.parse(data)
+                    if (parsed.delta?.content) {
+                      streamedContent += parsed.delta.content
+                      
+                      // Update the message with streamed content
+                      setMessagesBySearch(prev => {
+                        const newMap = new Map(prev)
+                        const messages = newMap.get(currentSearchId) || []
+                        const updatedMessages = messages.map(msg => 
+                          msg.id === assistantMessageId 
+                            ? { ...msg, content: streamedContent }
+                            : msg
+                        )
+                        newMap.set(currentSearchId, updatedMessages)
+                        return newMap
+                      })
+                    }
+                  } catch (e) {
+                    // Skip invalid JSON chunks
+                  }
+                }
+              }
+            }
+          } finally {
+            reader.releaseLock()
+          }
+          
+          // Save final state to storage
+          saveConversationToStorage(currentSearchId, getMessagesForSearch(currentSearchId))
+        }
+      } else {
+        // Handle non-streaming response (fallback)
+        const data = await response.json()
+        
+        const assistantMessage: ChatMessage = {
+          id: assistantMessageId,
+          type: 'assistant',
+          content: data.message?.content || data.response || 'No pude procesar tu mensaje.',
+          timestamp: new Date(),
+          metadata: data.message?.metadata || data.metadata
+        }
+        
+        // Add assistant response to specific search
+        addMessageToSearch(currentSearchId, assistantMessage)
+      }
     } catch (error) {
       console.error('Failed to send message:', error)
       
       const errorMessage: ChatMessage = {
         id: `error-${currentSearchId}-${Date.now()}`,
         type: 'assistant',
-        content: 'Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.',
+        content: error instanceof Error && error.message.includes('AI service') 
+          ? 'El servicio de AI no está disponible en este momento. Por favor intenta más tarde.'
+          : 'Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.',
         timestamp: new Date()
+      }
+      
+      // Remove any partial streaming message
+      if (streamedContent) {
+        setMessagesBySearch(prev => {
+          const newMap = new Map(prev)
+          const messages = newMap.get(currentSearchId) || []
+          const filteredMessages = messages.filter(msg => msg.id !== assistantMessageId)
+          newMap.set(currentSearchId, filteredMessages)
+          return newMap
+        })
       }
       
       addMessageToSearch(currentSearchId, errorMessage)
     } finally {
       setTypingForSearch(currentSearchId, false)
     }
-  }, [currentSearchId, searchContext, addMessageToSearch, getMessagesForSearch, setTypingForSearch])
+  }, [currentSearchId, searchContext, addMessageToSearch, getMessagesForSearch, setTypingForSearch, saveConversationToStorage])
   
   const addInsight = useCallback((insight: Omit<AIInsight, 'id' | 'timestamp'>) => {
     if (!currentSearchId) return
