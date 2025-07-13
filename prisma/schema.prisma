@@ -1,63 +1,83 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+  extensions = [vector]
 }
 
 model User {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  clerkUserId String   @unique
-  email       String?  @unique
-  firstName   String?
-  lastName    String?
-  imageUrl    String?
-  phoneNumber String?
-  
-  // Relations
-  searchHistory SearchHistory[]
+  id            BigInt         @id @default(autoincrement())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  clerkUserId   String         @unique
+  email         String?        @unique
+  firstName     String?
+  lastName      String?
+  imageUrl      String?
+  phoneNumber   String?
+  conversations Conversation[]
 
   @@index([email])
   @@index([clerkUserId])
 }
 
-// Track anonymous user searches
-model AnonymousSearch {
-  id           String   @id @default(cuid())
-  identifier   String   @unique // Cookie ID or IP hash
-  searchCount  Int      @default(0)
-  lastSearchAt DateTime @default(now())
-  createdAt    DateTime @default(now())
+// Conversaciones - Metadatos y agrupación
+model Conversation {
+  id        String    @id @default(cuid())
+  userId    BigInt?   @map("user_id")
+  sessionId String?   @map("session_id") // Para usuarios anónimos
+  title     String?   // Auto-generado o editado por usuario
+  metadata  Json      @default("{}") // Extensible
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // Soft delete
   
-  // Related searches
-  searches     SearchHistory[]
+  // Relaciones
+  user     User?     @relation(fields: [userId], references: [id])
+  messages Message[]
   
-  @@index([identifier, lastSearchAt])
+  // Índices para performance
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([sessionId, createdAt(sort: Desc)])
+  @@index([deletedAt])
+  @@map("conversations")
 }
 
-// Store search history for both anonymous and authenticated users
-model SearchHistory {
-  id          String   @id @default(cuid())
-  location    String
-  query       String?
-  resultsJson Json?    // Store search results
-  createdAt   DateTime @default(now())
-  deletedAt   DateTime? // Soft delete timestamp
+// Mensajes - El contenido real
+model Message {
+  id             BigInt       @id @default(autoincrement())
+  conversationId String       @map("conversation_id")
+  content        String       @db.Text
+  role           String       // 'user', 'assistant', 'system'
+  messageIndex   Int          @map("message_index")
+  metadata       Json         @default("{}") // search params, sources, etc
+  createdAt      DateTime     @default(now()) @map("created_at")
   
-  // Relations - either anonymous or authenticated user
-  anonymousId String?
-  anonymous   AnonymousSearch? @relation(fields: [anonymousId], references: [id], onDelete: Cascade)
+  // Relaciones
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
   
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Índices compuestos para queries rápidas
+  @@unique([conversationId, messageIndex])
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+// Document se mantiene para otros usos futuros (RAG, embeddings, etc)
+model Document {
+  id         BigInt   @id @default(autoincrement())
+  content    String   @db.Text
+  metadata   Json     @default("{}")
+  embedding  Unsupported("vector(1536)")?
+  fts        Unsupported("tsvector")?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
   
-  @@index([userId])
-  @@index([anonymousId])
-  @@index([createdAt])
-  @@index([deletedAt])
+  @@index([createdAt(sort: Desc)])
+  @@index([metadata(ops: JsonbOps)], type: Gin)
+  @@map("documents")
 }
