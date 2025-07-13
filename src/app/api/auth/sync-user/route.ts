@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { serializeBigInt } from '@/lib/bigint-serializer';
 
 // Manual user sync endpoint for development
 // Call this after login to ensure user exists in database
@@ -23,7 +24,7 @@ export async function POST() {
     if (existingUser) {
       return NextResponse.json({ 
         message: 'User already synced',
-        user: existingUser 
+        user: serializeBigInt(existingUser)
       });
     }
 
@@ -51,7 +52,7 @@ export async function POST() {
 
     return NextResponse.json({ 
       message: 'User synced successfully',
-      user 
+      user: serializeBigInt(user)
     });
   } catch (error) {
     console.error('Error syncing user:', error);

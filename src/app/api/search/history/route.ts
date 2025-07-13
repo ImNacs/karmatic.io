@@ -1,79 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { prisma } from '@/lib/prisma'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { getOrCreateSearchSession } from '@/lib/search-tracking'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth()
+    const sessionId = await getOrCreateSearchSession()
     
-    let searchHistory = []
-    
+    // Get user ID from Clerk if authenticated
+    let dbUserId = null
     if (userId) {
-      // Get authenticated user's search history
-      const user = await prisma.user.findUnique({
-        where: { clerkUserId: userId }
-      })
+      const { data: user } = await supabase
+        .from('User')
+        .select('id')
+        .eq('clerkUserId', userId)
+        .single()
       
-      if (user) {
-        searchHistory = await prisma.searchHistory.findMany({
-          where: { 
-            userId: user.id,
-            deletedAt: null // Exclude soft-deleted items
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 50, // Last 50 searches
-          select: {
-            id: true,
-            location: true,
-            query: true,
-            createdAt: true
-          }
-        })
-      }
-    } else {
-      // Get anonymous user's search history based on cookie
-      const cookieStore = await cookies()
-      const identifier = cookieStore.get('anonymous-id')?.value
-      
-      console.log('Anonymous history identifier:', identifier)
-      
-      if (!identifier) {
-        // No anonymous identifier, return empty history
-        return NextResponse.json({
-          searches: [],
-          total: 0
-        })
-      }
-      
-      const anonymousSearch = await prisma.anonymousSearch.findUnique({
-        where: { identifier }
-      })
-      
-      if (anonymousSearch) {
-        searchHistory = await prisma.searchHistory.findMany({
-          where: { 
-            anonymousId: anonymousSearch.id,
-            deletedAt: null // Exclude soft-deleted items
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 20, // Less for anonymous users
-          select: {
-            id: true,
-            location: true,
-            query: true,
-            createdAt: true
-          }
-        })
-      }
+      dbUserId = user?.id
     }
     
-    // Group by date
-    const grouped = groupSearchesByDate(searchHistory)
+    // Call the SQL function to get search history
+    const { data: searches, error } = await supabase.rpc('get_search_history', {
+      p_user_id: dbUserId,
+      p_session_id: !dbUserId ? sessionId : null,
+      p_include_deleted: false
+    })
+    
+    if (error) {
+      console.error('Error fetching search history:', error)
+      throw error
+    }
+    
+    // Transform data to match existing UI format
+    const transformedSearches = (searches || []).map((search: any) => ({
+      id: search.id,
+      location: search.location || '',
+      query: search.query || null,
+      createdAt: search.created_at
+    }))
+    
+    // Group by date using existing function
+    const grouped = groupSearchesByDate(transformedSearches)
     
     return NextResponse.json({
       searches: grouped,
-      total: searchHistory.length
+      total: transformedSearches.length
     })
     
   } catch (error) {

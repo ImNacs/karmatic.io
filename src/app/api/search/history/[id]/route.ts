@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { prisma } from '@/lib/prisma'
-import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
+import { getOrCreateSearchSession } from '@/lib/search-tracking'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function DELETE(
   request: NextRequest,
@@ -10,56 +15,46 @@ export async function DELETE(
   try {
     const { id } = await params
     const { userId } = await auth()
+    const sessionId = await getOrCreateSearchSession()
     
-    // First, find the search history item
-    const searchHistory = await prisma.searchHistory.findUnique({
-      where: { id },
-      include: {
-        user: true,
-        anonymous: true
-      }
+    // Get user ID from Clerk if authenticated
+    let dbUserId = null
+    if (userId) {
+      const { data: user } = await supabase
+        .from('User')
+        .select('id')
+        .eq('clerkUserId', userId)
+        .single()
+      
+      dbUserId = user?.id
+    }
+    
+    // Call the SQL function to soft delete
+    const { data: success, error } = await supabase.rpc('delete_search_history', {
+      p_conversation_id: id, // id is the conversationId in the new system
+      p_user_id: dbUserId,
+      p_session_id: !dbUserId ? sessionId : null
     })
     
-    if (!searchHistory) {
+    if (error) {
+      console.error('Error deleting search history:', error)
+      
+      if (error.message?.includes('not found')) {
+        return NextResponse.json(
+          { error: 'Search history not found' },
+          { status: 404 }
+        )
+      }
+      
+      throw error
+    }
+    
+    if (!success) {
       return NextResponse.json(
-        { error: 'Search history not found' },
-        { status: 404 }
+        { error: 'Unauthorized or not found' },
+        { status: 403 }
       )
     }
-    
-    // Check permissions
-    if (userId) {
-      // Authenticated user - check if they own this search
-      const user = await prisma.user.findUnique({
-        where: { clerkUserId: userId }
-      })
-      
-      if (!user || searchHistory.userId !== user.id) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 403 }
-        )
-      }
-    } else {
-      // Anonymous user - check cookie identifier
-      const cookieStore = await cookies()
-      const identifier = cookieStore.get('anonymous-id')?.value
-      
-      if (!identifier || searchHistory.anonymous?.identifier !== identifier) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 403 }
-        )
-      }
-    }
-    
-    // Soft delete the search history item
-    await prisma.searchHistory.update({
-      where: { id },
-      data: {
-        deletedAt: new Date()
-      }
-    })
     
     console.log('Soft deleted search history:', id)
     
