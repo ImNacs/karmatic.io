@@ -1,5 +1,14 @@
 import '@testing-library/jest-dom';
 
+// Polyfill TextEncoder/TextDecoder for Node.js environment
+if (typeof TextEncoder === 'undefined') {
+  global.TextEncoder = require('util').TextEncoder;
+}
+
+if (typeof TextDecoder === 'undefined') {
+  global.TextDecoder = require('util').TextDecoder;
+}
+
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
