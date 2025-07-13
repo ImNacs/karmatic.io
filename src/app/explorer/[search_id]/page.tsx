@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { prisma } from '@/lib/prisma'
+import { getSearchData } from '@/lib/search-data'
 import ExplorerResultsMobile from './ExplorerResultsMobile'
 
 interface PageProps {
@@ -12,19 +12,8 @@ export default async function ExplorerSearchPage({ params }: PageProps) {
   const { search_id } = await params
   
   try {
-    // Load search from database
-    const searchHistory = await prisma.searchHistory.findUnique({
-      where: { id: search_id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true
-          }
-        }
-      }
-    })
+    // Load search from database using new model
+    const searchHistory = await getSearchData(search_id)
     
     if (!searchHistory) {
       notFound()
@@ -32,8 +21,8 @@ export default async function ExplorerSearchPage({ params }: PageProps) {
     
     // Extract data from resultsJson
     const searchData = searchHistory.resultsJson as any
-    const agencies = searchData?.agencies || []
-    const coordinates = searchData?.coordinates
+    const agencies = searchData?.agencies || searchData?.results?.agencies || []
+    const coordinates = searchData?.coordinates || searchData?.results?.coordinates
     
     return (
       <ExplorerResultsMobile
