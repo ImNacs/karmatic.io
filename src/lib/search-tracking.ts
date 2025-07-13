@@ -1,7 +1,12 @@
 import { cookies } from 'next/headers';
 import { nanoid } from 'nanoid';
-import { prisma } from '@/lib/prisma';
+import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 /**
  * Cookie name for tracking anonymous search sessions.
@@ -108,30 +113,24 @@ export async function getSearchLimit(identifier?: string): Promise<SearchLimitIn
     return { remaining: Infinity, total: Infinity, isAuthenticated: true };
   }
 
-  // Check anonymous search count
-  const session = await prisma.anonymousSearch.findUnique({
-    where: { identifier },
+  // Check anonymous search count using the SQL function
+  const { data, error } = await supabase.rpc('check_anonymous_search_limit', {
+    p_session_id: identifier,
+    p_limit_hours: 24
   });
 
-  if (!session) {
+  if (error) {
+    console.error('Error checking search limit:', error);
     return { remaining: 1, total: 1, isAuthenticated: false };
   }
 
-  // Check if it's been 24 hours since last search (reset period)
-  const hoursSinceLastSearch = 
-    (Date.now() - session.lastSearchAt.getTime()) / (1000 * 60 * 60);
+  const { search_count, remaining } = data[0] || { search_count: 0, remaining: 1 };
   
-  if (hoursSinceLastSearch >= 24) {
-    // Reset search count
-    await prisma.anonymousSearch.update({
-      where: { id: session.id },
-      data: { searchCount: 0 },
-    });
-    return { remaining: 1, total: 1, isAuthenticated: false };
-  }
-
-  const remaining = Math.max(0, 1 - session.searchCount);
-  return { remaining, total: 1, isAuthenticated: false };
+  return { 
+    remaining, 
+    total: 1, 
+    isAuthenticated: false 
+  };
 }
 
 /**
@@ -163,53 +162,18 @@ export async function getSearchLimit(identifier?: string): Promise<SearchLimitIn
  * ```
  */
 export async function incrementSearchCount(identifier: string) {
-  // First check current count
-  const current = await prisma.anonymousSearch.findUnique({
-    where: { identifier },
-  });
+  // First check current limit
+  const currentLimit = await getSearchLimit(identifier);
   
-  // Check if we need to reset (24 hours passed)
-  if (current) {
-    const hoursSinceLastSearch = (Date.now() - current.lastSearchAt.getTime()) / (1000 * 60 * 60);
-    if (hoursSinceLastSearch >= 24) {
-      // Reset the count
-      const reset = await prisma.anonymousSearch.update({
-        where: { identifier },
-        data: {
-          searchCount: 1,
-          lastSearchAt: new Date(),
-        },
-      });
-      return {
-        ...reset,
-        remaining: 0,
-        total: DAILY_LIMIT,
-        isAuthenticated: false,
-      };
-    }
-    
-    // Check if limit exceeded
-    if (current.searchCount >= DAILY_LIMIT) {
-      throw new Error('Search limit exceeded');
-    }
+  if (currentLimit.remaining <= 0) {
+    throw new Error('Search limit exceeded');
   }
   
-  const session = await prisma.anonymousSearch.upsert({
-    where: { identifier },
-    update: { 
-      searchCount: { increment: 1 },
-      lastSearchAt: new Date(),
-    },
-    create: {
-      identifier,
-      searchCount: 1,
-      lastSearchAt: new Date(),
-    },
-  });
-  
+  // The actual increment happens when we save the search
+  // This function now just validates the limit
   return {
-    ...session,
-    remaining: Math.max(0, DAILY_LIMIT - session.searchCount),
+    identifier,
+    remaining: currentLimit.remaining - 1,
     total: DAILY_LIMIT,
     isAuthenticated: false,
   };
@@ -273,15 +237,114 @@ export async function saveSearchHistory({
   userId,
   anonymousId,
 }: SaveSearchHistoryParams) {
-  return await prisma.searchHistory.create({
-    data: {
-      location,
-      query,
-      resultsJson: results,
-      userId,
-      anonymousId,
-    },
+  // Create conversation ID for this search
+  const conversationId = nanoid();
+  
+  // Get user ID from database if we have Clerk userId
+  let dbUserId = null;
+  if (userId) {
+    console.log('Looking for user with clerkUserId:', userId);
+    const { data: user, error: userError } = await supabase
+      .from('User')
+      .select('id')
+      .eq('clerkUserId', userId)
+      .single();
+    
+    if (userError) {
+      console.error('Error finding user:', userError);
+    } else {
+      console.log('Found user:', user);
+    }
+    
+    dbUserId = user?.id;
+  }
+  
+  console.log('Final dbUserId:', dbUserId, 'anonymousId:', anonymousId);
+  
+  // Generate content for the message
+  const content = query ? `Busco ${query} en ${location}` : `Busco opciones en ${location}`;
+  
+  // Save as initial search message using the new function
+  const { data, error } = await supabase.rpc('save_initial_search', {
+    p_conversation_id: conversationId,
+    p_location: location,
+    p_query: query || '',
+    p_user_id: dbUserId,
+    p_session_id: !dbUserId ? anonymousId : null,
+    p_content: content
   });
+  
+  if (error) {
+    console.error('Error saving search history:', error);
+    throw error;
+  }
+  
+  // If we have results, update the message metadata to include them
+  if (results) {
+    // Extract coordinates for easy access
+    const coordinates = results.coordinates || {};
+    
+    const { error: updateError } = await supabase
+      .from('messages')
+      .update({
+        metadata: {
+          search: {
+            location,
+            query: query || '',
+            isInitial: true
+          },
+          lat: coordinates.lat || null,
+          lng: coordinates.lng || null,
+          results: results // Include the full results object
+        }
+      })
+      .eq('conversation_id', conversationId)
+      .eq('message_index', 0);
+    
+    if (updateError) {
+      console.error('Error updating search results:', updateError);
+    }
+  }
+  
+  return {
+    id: conversationId,
+    location,
+    query,
+    createdAt: new Date()
+  };
+}
+
+/**
+ * Saves a message to an existing conversation.
+ * 
+ * @param {string} conversationId - The conversation ID
+ * @param {string} content - The message content
+ * @param {'user' | 'assistant'} role - The role of the message sender
+ * @param {number} messageIndex - The index of the message in the conversation
+ * @param {any} metadata - Optional metadata for the message
+ * @returns {Promise<void>}
+ */
+export async function saveMessage(
+  conversationId: string,
+  content: string,
+  role: 'user' | 'assistant',
+  messageIndex: number,
+  metadata?: any
+) {
+  const { error } = await supabase
+    .from('messages')
+    .insert({
+      conversation_id: conversationId,
+      content,
+      role,
+      message_index: messageIndex,
+      metadata: metadata || {}
+    });
+  
+  if (error) {
+    console.error('Error saving message:', error);
+    throw error;
+  }
 }
 
 /**
@@ -313,25 +376,24 @@ export async function transferAnonymousSearchHistory(
   anonymousIdentifier: string,
   userId: string
 ): Promise<void> {
-  // Find the anonymous session
-  const anonymousSession = await prisma.anonymousSearch.findUnique({
-    where: { identifier: anonymousIdentifier },
-    include: { searches: true },
+  // Get database user ID
+  const { data: user } = await supabase
+    .from('User')
+    .select('id')
+    .eq('clerkUserId', userId)
+    .single();
+  
+  if (!user) return;
+
+  // Transfer all documents with this sessionId to the user
+  const { data, error } = await supabase.rpc('transfer_anonymous_history', {
+    p_session_id: anonymousIdentifier,
+    p_user_id: user.id
   });
 
-  if (!anonymousSession) return;
-
-  // Transfer all search history to the user
-  await prisma.searchHistory.updateMany({
-    where: { anonymousId: anonymousSession.id },
-    data: { 
-      userId,
-      anonymousId: null,
-    },
-  });
-
-  // Delete the anonymous session
-  await prisma.anonymousSearch.delete({
-    where: { id: anonymousSession.id },
-  });
+  if (error) {
+    console.error('Error transferring anonymous history:', error);
+  } else {
+    console.log(`Transferred ${data} documents to user ${user.id}`);
+  }
 }
