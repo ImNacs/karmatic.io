@@ -22,7 +22,7 @@ A modern application for discovering, analyzing, and selecting the best automoti
 - Comprehensive test coverage
 
 ### 🚧 In Development
-- Real-time AI chat functionality
+- ~~Real-time AI chat functionality~~ ✅ **AI Assistant Integration with Mastra (Phase 1 Complete)**
 - Advanced filtering options
 - Payment integration for premium features
 - Multi-language support
@@ -149,6 +149,15 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key
 # GTM (optional)
 NEXT_PUBLIC_GTM_ID=GTM-XXXXXX
 
+# AI Providers (at least one required)
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+# See src/mastra/README.md for all supported providers
+
+# Mastra Configuration
+DEFAULT_LLM_PROVIDER=openai
+MASTRA_LOG_LEVEL=info
+
 # Cleanup Job (optional)
 CLEANUP_SECRET_KEY=your_secret_key_for_cleanup_job
 ```
@@ -194,6 +203,8 @@ karmatic/
 │   ├── app/                      # Next.js App Router
 │   │   ├── api/                 # API endpoints
 │   │   │   ├── auth/           # Authentication endpoints
+│   │   │   ├── ai/             # AI Assistant endpoints
+│   │   │   │   └── chat/       # Chat streaming endpoint
 │   │   │   ├── search/         # Search-related APIs
 │   │   │   │   ├── save/       # Save search endpoint
 │   │   │   │   ├── history/   # Search history endpoints
@@ -207,16 +218,25 @@ karmatic/
 │   ├── components/              # React components
 │   │   ├── ui/                 # Base UI components
 │   │   ├── features/           # Feature components
+│   │   │   ├── ai-assistant/   # AI chat components
 │   │   │   ├── sidebar/        # Search history sidebar
 │   │   │   └── agency-map/     # Map components
 │   │   └── search-*.tsx        # Search components
 │   ├── contexts/                # React contexts
+│   │   ├── AIAssistantContext.tsx  # AI chat state
 │   │   └── SearchHistoryContext.tsx
 │   ├── hooks/                   # Custom React hooks
 │   ├── lib/                     # Utilities and helpers
 │   │   ├── auth/               # Auth utilities
 │   │   ├── gtm/                # Analytics
 │   │   └── supabase/           # Database clients
+│   ├── mastra/                  # AI Agent System
+│   │   ├── agents/             # AI agent definitions
+│   │   ├── config/             # LLM configuration
+│   │   ├── memory/             # Agent memory management
+│   │   ├── tools/              # Agent tools/functions
+│   │   ├── workflows/          # Multi-agent workflows
+│   │   └── README.md           # Mastra documentation
 │   ├── types/                   # TypeScript definitions
 │   └── middleware.ts            # Next.js middleware
 ├── prisma/
