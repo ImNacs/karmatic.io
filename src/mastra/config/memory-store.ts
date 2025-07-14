@@ -20,15 +20,14 @@ import { openai } from "@ai-sdk/openai";
 /**
  * Environment validation for memory store configuration
  */
-function validateMemoryEnvironment() {
-  const required = {
-    DATABASE_URL: process.env.DATABASE_URL,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-  };
+function validateMemoryEnvironment(): { DATABASE_URL: string; OPENAI_API_KEY: string } {
+  const DATABASE_URL = process.env.DATABASE_URL;
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-  const missing = Object.entries(required)
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
+  const missing: string[] = [];
+  
+  if (!DATABASE_URL) missing.push('DATABASE_URL');
+  if (!OPENAI_API_KEY) missing.push('OPENAI_API_KEY');
 
   if (missing.length > 0) {
     throw new Error(
@@ -36,7 +35,11 @@ function validateMemoryEnvironment() {
     );
   }
 
-  return required;
+  // TypeScript now knows these are non-null strings
+  return {
+    DATABASE_URL: DATABASE_URL!,
+    OPENAI_API_KEY: OPENAI_API_KEY!,
+  };
 }
 
 /**
