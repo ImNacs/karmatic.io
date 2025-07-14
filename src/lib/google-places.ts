@@ -4,8 +4,8 @@ import { useGoogleMaps } from "@/providers/google-maps-provider";
 // Google Places API configuration
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-// Feature flag to enable new API (can be controlled via env variable)
-const USE_NEW_AUTOCOMPLETE_API = process.env.NEXT_PUBLIC_USE_NEW_PLACES_API !== 'false';
+// Always use new API - old one was deprecated March 2025
+const USE_NEW_AUTOCOMPLETE_API = true;
 
 // Custom hook for Google Places Autocomplete
 export function useGooglePlaces() {

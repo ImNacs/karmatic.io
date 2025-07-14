@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { mastra } from '@/mastra'
-import { prepareContext, type AgentContext } from '@/mastra/agents/karmatic-assistant'
 
 export const runtime = 'edge'
 
@@ -12,8 +11,6 @@ interface ChatMessage {
 
 interface ChatRequest {
   messages: ChatMessage[]
-  searchId?: string
-  context?: AgentContext
 }
 
 export async function POST(request: NextRequest) {
@@ -39,38 +36,19 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Get the Karmatic Assistant agent
-    const agent = mastra.getAgent('karmaticAssistant')
+    // Get the basic agent
+    const agent = mastra.getAgent('basic')
     
     if (!agent) {
-      console.error('Karmatic Assistant agent not found')
+      console.error('Basic agent not found')
       return new Response(
         JSON.stringify({ error: 'AI assistant not available' }),
         { status: 503, headers: { 'Content-Type': 'application/json' } }
       )
     }
     
-    // Prepare messages with context
-    const contextString = prepareContext({
-      ...body.context,
-      user: authData?.userId ? {
-        id: authData.userId,
-      } : undefined
-    })
-    
-    // Add context to the conversation if available
-    const messagesWithContext = contextString 
-      ? [
-          ...body.messages.slice(0, -1),
-          {
-            role: 'user' as const,
-            content: lastMessage.content + contextString
-          }
-        ]
-      : body.messages
-    
     // Stream the response using the agent
-    const stream = await agent.stream(messagesWithContext)
+    const stream = await agent.stream(body.messages)
     
     // Return the streaming response
     return stream.toDataStreamResponse()

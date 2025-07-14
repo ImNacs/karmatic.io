@@ -9,7 +9,6 @@ import { toast } from "sonner"
 import type { SearchData } from "@/types/agency"
 import { useSearchLimit } from "@/components/features/search/hooks/useSearchLimit"
 import { trackEvent } from "@/lib/gtm/gtm"
-import { n8nApi } from "@/lib/n8n-api"
 import { useGooglePlaces } from "@/lib/google-places"
 import { useSearchHistory } from "@/contexts/SearchHistoryContext"
 
@@ -64,22 +63,11 @@ export default function Home() {
       // Execute search in background
       let searchResults
       
-      if (!n8nApi.isConfigured()) {
-        // Use mock data for demo
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        searchResults = {
-          success: true,
-          agencies: [] // Will use mock data in explorer
-        }
-      } else {
-        searchResults = await n8nApi.searchAgencies({
-          location: data.location,
-          query: data.query || '',
-          latitude: coordinates?.lat,
-          longitude: coordinates?.lng,
-          placeId: data.placeId,
-          placeDetails: data.placeDetails,
-        })
+      // TODO: Implement search with Mastra
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      searchResults = {
+        success: true,
+        agencies: [] // Will use mock data in explorer
       }
       
       // Save search to database
