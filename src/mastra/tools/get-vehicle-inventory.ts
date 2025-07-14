@@ -30,7 +30,8 @@ export const getVehicleInventory = createTool({
   description: "Check available vehicle inventory at a specific dealership",
   inputSchema: getVehicleInventorySchema,
   
-  execute: async ({ dealershipName, vehicleType, brand, maxPrice, minYear, condition }) => {
+  execute: async (context) => {
+    const { dealershipName, vehicleType, brand, maxPrice, minYear, condition } = context.context;
     try {
       // Mock inventory data - in production this would call real APIs
       const mockInventory = [

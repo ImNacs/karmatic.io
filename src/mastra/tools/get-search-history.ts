@@ -30,7 +30,8 @@ export const getSearchHistory = createTool({
   description: "Retrieve user's recent search history to provide context and personalized recommendations",
   inputSchema: getSearchHistorySchema,
   
-  execute: async ({ limit, includeDetails, filterBy }) => {
+  execute: async (context) => {
+    const { limit, includeDetails, filterBy } = context.context;
     try {
       // Call the existing search history API
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/search/history`, {
@@ -57,13 +58,13 @@ export const getSearchHistory = createTool({
       
       if (filterBy?.location) {
         filteredSearches = filteredSearches.filter((search: any) => 
-          search.location?.toLowerCase().includes(filterBy.location.toLowerCase())
+          search.location?.toLowerCase().includes(filterBy.location!.toLowerCase())
         );
       }
       
       if (filterBy?.brand) {
         filteredSearches = filteredSearches.filter((search: any) => 
-          search.query?.toLowerCase().includes(filterBy.brand.toLowerCase())
+          search.query?.toLowerCase().includes(filterBy.brand!.toLowerCase())
         );
       }
       
@@ -97,7 +98,7 @@ export const getSearchHistory = createTool({
       
       // Format searches for agent consumption
       const formattedSearches = recentSearches.map((search: any) => {
-        const formatted = {
+        const formatted: any = {
           id: search.id,
           location: search.location,
           query: search.query,

@@ -7,6 +7,46 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 
 /**
+ * Type definition for dealership analysis result
+ */
+interface DealershipAnalysis {
+  basic: {
+    name: string;
+    address: string;
+    rating: number;
+    totalRatings: number;
+    priceLevel: number;
+    types: string[];
+  };
+  services: {
+    isCarDealer: boolean;
+    isCarRepair: boolean;
+    hasCarWash: boolean;
+    serviceTypes: string[];
+  };
+  ratingAnalysis: {
+    score: number;
+    level: string;
+    reliability: string;
+    totalReviews: number;
+  };
+  contact?: {
+    phone: string;
+    website: string;
+  };
+  hours?: {
+    openNow: boolean;
+    weekdayText: string[];
+  };
+  recentReviews?: Array<{
+    author: string;
+    rating: number;
+    text: string;
+    time: string;
+  }>;
+}
+
+/**
  * Schema for dealership analysis parameters
  */
 const analyzeDealershipSchema = z.object({
@@ -27,7 +67,8 @@ export const analyzeDealership = createTool({
   description: "Get detailed analysis and information about a specific dealership",
   inputSchema: analyzeDealershipSchema,
   
-  execute: async ({ placeId, includeReviews, includeHours, includeContact }) => {
+  execute: async (context) => {
+    const { placeId, includeReviews, includeHours, includeContact } = context.context;
     try {
       // Call Google Places API for detailed information
       const detailsParams = new URLSearchParams({
@@ -64,7 +105,7 @@ export const analyzeDealership = createTool({
       const place = data.result;
       
       // Analyze the dealership data
-      const analysis = {
+      const analysis: DealershipAnalysis = {
         basic: {
           name: place.name,
           address: place.formatted_address,

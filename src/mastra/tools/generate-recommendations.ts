@@ -31,6 +31,18 @@ const generateRecommendationsSchema = z.object({
 });
 
 /**
+ * Type for recommendation item
+ */
+interface RecommendationItem {
+  title: string;
+  description: string;
+  reasoning: string;
+  actionable: boolean;
+  action?: string;
+  confidence: string;
+}
+
+/**
  * Tool for generating personalized recommendations
  * 
  * This tool combines user preferences, search history, and market data
@@ -41,14 +53,15 @@ export const generateRecommendations = createTool({
   description: "Generate personalized recommendations for dealerships, vehicles, or search strategies based on user preferences and context",
   inputSchema: generateRecommendationsSchema,
   
-  execute: async ({ context, recommendationType, priority }) => {
+  execute: async (toolContext) => {
+    const { context, recommendationType, priority } = toolContext.context;
     try {
       const recommendations = {
         type: recommendationType,
         context,
         priority,
         generated: new Date().toISOString(),
-        recommendations: [],
+        recommendations: [] as RecommendationItem[],
       };
       
       // Generate recommendations based on type
@@ -107,8 +120,8 @@ export const generateRecommendations = createTool({
 /**
  * Generate dealership-specific recommendations
  */
-function generateDealershipRecommendations(context: any, priority?: string) {
-  const recommendations = [];
+function generateDealershipRecommendations(context: any, priority?: string): RecommendationItem[] {
+  const recommendations: RecommendationItem[] = [];
   
   // Base recommendations
   if (context.location) {
@@ -160,8 +173,8 @@ function generateDealershipRecommendations(context: any, priority?: string) {
 /**
  * Generate vehicle-specific recommendations
  */
-function generateVehicleRecommendations(context: any, priority?: string) {
-  const recommendations = [];
+function generateVehicleRecommendations(context: any, priority?: string): RecommendationItem[] {
+  const recommendations: RecommendationItem[] = [];
   
   if (context.budget) {
     recommendations.push({
@@ -175,7 +188,7 @@ function generateVehicleRecommendations(context: any, priority?: string) {
   }
   
   if (context.vehicleType) {
-    const typeRecommendations = {
+    const typeRecommendations: Record<string, string> = {
       "SUV": "Consider certified pre-owned SUVs for better value, as they depreciate faster initially",
       "Sedan": "Sedans offer excellent fuel efficiency and lower insurance costs",
       "Truck": "Look for trucks with good towing capacity if you need utility features"
@@ -210,8 +223,8 @@ function generateVehicleRecommendations(context: any, priority?: string) {
 /**
  * Generate search strategy recommendations
  */
-function generateSearchStrategyRecommendations(context: any, priority?: string) {
-  const recommendations = [];
+function generateSearchStrategyRecommendations(context: any, priority?: string): RecommendationItem[] {
+  const recommendations: RecommendationItem[] = [];
   
   recommendations.push({
     title: "Multi-Platform Search Strategy",
@@ -248,8 +261,8 @@ function generateSearchStrategyRecommendations(context: any, priority?: string) 
 /**
  * Generate market timing recommendations
  */
-function generateMarketTimingRecommendations(context: any, priority?: string) {
-  const recommendations = [];
+function generateMarketTimingRecommendations(context: any, priority?: string): RecommendationItem[] {
+  const recommendations: RecommendationItem[] = [];
   
   recommendations.push({
     title: "Current Market Conditions",

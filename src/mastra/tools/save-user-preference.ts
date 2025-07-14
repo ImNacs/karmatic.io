@@ -35,7 +35,8 @@ export const saveUserPreference = createTool({
   description: "Save user preferences for vehicles, budget, location, or search criteria to personalize future interactions",
   inputSchema: saveUserPreferenceSchema,
   
-  execute: async ({ category, preference, priority, notes }) => {
+  execute: async (context) => {
+    const { category, preference, priority, notes } = context.context;
     try {
       // This tool primarily serves to signal to the agent that a preference
       // should be saved to working memory. The actual saving happens through

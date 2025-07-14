@@ -24,7 +24,8 @@ export const webResearchTool = createTool({
     researchType: z.enum(["quick", "comprehensive"]).default("quick").describe("Type of research to perform"),
   }),
   
-  execute: async ({ query, researchType }) => {
+  execute: async (context) => {
+    const { query, researchType } = context.context;
     try {
       // This would integrate with the MCP Perplexity server
       // For now, we'll provide a structured approach to research
@@ -74,7 +75,8 @@ export const documentationLookupTool = createTool({
     topic: z.string().optional().describe("Specific topic or feature to research"),
   }),
   
-  execute: async ({ library, topic }) => {
+  execute: async (context) => {
+    const { library, topic } = context.context;
     try {
       // This would integrate with Context7 MCP server
       // For now, provide guidance on implementation
@@ -109,7 +111,8 @@ export const browserAutomationTool = createTool({
     selector: z.string().optional().describe("CSS selector for specific elements"),
   }),
   
-  execute: async ({ url, action, selector }) => {
+  execute: async (context) => {
+    const { url, action, selector } = context.context;
     try {
       // This would integrate with Playwright MCP server
       // For browser automation of dealership websites
@@ -144,7 +147,8 @@ export const supabaseDataTool = createTool({
     parameters: z.record(z.any()).optional().describe("Operation parameters"),
   }),
   
-  execute: async ({ operation, parameters }) => {
+  execute: async (context) => {
+    const { operation, parameters } = context.context;
     try {
       // This would integrate with Supabase MCP server
       // For advanced database operations beyond basic queries
@@ -238,7 +242,7 @@ export async function initializeMCP(): Promise<{ tools: any; config: MCPConfig }
   ));
   
   // Filter tools based on enabled servers
-  const enabledTools = {};
+  const enabledTools: Record<string, any> = {};
   
   if (config.servers.perplexity.enabled) {
     enabledTools['webResearchTool'] = webResearchTool;

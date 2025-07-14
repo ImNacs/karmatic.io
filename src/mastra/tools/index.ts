@@ -7,6 +7,17 @@
  * analyzing vehicle data, and providing market insights.
  */
 
+// Tool imports
+import { searchDealerships } from "./search-dealerships";
+import { analyzeDealership } from "./analyze-dealership";
+import { getVehicleInventory } from "./get-vehicle-inventory";
+import { getMarketInsights } from "./get-market-insights";
+import { compareVehicles } from "./compare-vehicles";
+import { saveUserPreference } from "./save-user-preference";
+import { getSearchHistory } from "./get-search-history";
+import { generateRecommendations } from "./generate-recommendations";
+
+// Re-export tools
 // Search and discovery tools
 export { searchDealerships } from "./search-dealerships";
 export { analyzeDealership } from "./analyze-dealership";

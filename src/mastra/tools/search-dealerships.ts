@@ -28,7 +28,8 @@ export const searchDealerships = createTool({
   description: "Search for vehicle dealerships and agencies in a specific location with optional filters",
   inputSchema: searchDealershipsSchema,
   
-  execute: async ({ location, brand, radius, services, minRating }) => {
+  execute: async (context) => {
+    const { location, brand, radius, services, minRating } = context.context;
     try {
       // Call the existing search API
       const searchParams = new URLSearchParams({

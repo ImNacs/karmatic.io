@@ -7,6 +7,34 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 
 /**
+ * Type definitions for vehicle data
+ */
+interface VehicleData {
+  price: { msrp: number; typical: number };
+  fuel_efficiency: { city: number; highway: number; combined: number };
+  safety_rating: { nhtsa: number; iihs: string };
+  reliability: { score: number; rank: string };
+  features: string[];
+  performance: { horsepower: number; torque: number; transmission: string };
+  dimensions: { length: number; width: number; height: number; cargo: number };
+  warranty: { basic: string; powertrain: string };
+}
+
+type ComparisonCriteria = keyof VehicleData;
+
+interface VehicleComparisonResult {
+  vehicle: {
+    make: string;
+    model: string;
+    year: number;
+    trim?: string;
+  };
+  data?: Partial<VehicleData>;
+  available: boolean;
+  error?: string;
+}
+
+/**
  * Schema for vehicle comparison parameters
  */
 const compareVehiclesSchema = z.object({
@@ -40,10 +68,11 @@ export const compareVehicles = createTool({
   description: "Compare multiple vehicles across various criteria like price, fuel efficiency, safety, and features",
   inputSchema: compareVehiclesSchema,
   
-  execute: async ({ vehicles, comparisonCriteria }) => {
+  execute: async (context) => {
+    const { vehicles, comparisonCriteria } = context.context;
     try {
       // Mock vehicle database - in production this would query real vehicle data APIs
-      const vehicleDatabase = {
+      const vehicleDatabase: Record<string, VehicleData> = {
         "Honda Civic 2024": {
           price: { msrp: 25000, typical: 24500 },
           fuel_efficiency: { city: 28, highway: 36, combined: 32 },
@@ -87,7 +116,7 @@ export const compareVehicles = createTool({
       };
       
       // Build comparison data
-      const comparisonResults = vehicles.map(vehicle => {
+      const comparisonResults: VehicleComparisonResult[] = vehicles.map(vehicle => {
         const key = `${vehicle.make} ${vehicle.model} ${vehicle.year}`;
         const data = vehicleDatabase[key];
         
@@ -100,10 +129,11 @@ export const compareVehicles = createTool({
         }
         
         // Extract only requested criteria
-        const criteriaData = {};
+        const criteriaData: Partial<VehicleData> = {};
         comparisonCriteria.forEach(criteria => {
-          if (data[criteria]) {
-            criteriaData[criteria] = data[criteria];
+          const key = criteria as ComparisonCriteria;
+          if (data[key]) {
+            criteriaData[key] = data[key] as any;
           }
         });
         
@@ -119,48 +149,59 @@ export const compareVehicles = createTool({
         overview: `Comparing ${vehicles.length} vehicles across ${comparisonCriteria.length} criteria`,
         
         winners: comparisonCriteria.reduce((acc, criteria) => {
-          const validVehicles = comparisonResults.filter(v => v.available && v.data[criteria]);
+          const key = criteria as ComparisonCriteria;
+          const validVehicles = comparisonResults.filter(v => v.available && v.data && v.data[key]);
           
           if (validVehicles.length === 0) return acc;
           
           let winner;
           switch (criteria) {
             case "price":
-              winner = validVehicles.reduce((min, current) => 
-                current.data.price.typical < min.data.price.typical ? current : min
-              );
+              winner = validVehicles.reduce((min, current) => {
+                const minPrice = min.data?.price?.typical ?? Infinity;
+                const currentPrice = current.data?.price?.typical ?? Infinity;
+                return currentPrice < minPrice ? current : min;
+              });
               break;
             case "fuel_efficiency":
-              winner = validVehicles.reduce((best, current) => 
-                current.data.fuel_efficiency.combined > best.data.fuel_efficiency.combined ? current : best
-              );
+              winner = validVehicles.reduce((best, current) => {
+                const bestMpg = best.data?.fuel_efficiency?.combined ?? 0;
+                const currentMpg = current.data?.fuel_efficiency?.combined ?? 0;
+                return currentMpg > bestMpg ? current : best;
+              });
               break;
             case "safety_rating":
-              winner = validVehicles.reduce((best, current) => 
-                current.data.safety_rating.nhtsa > best.data.safety_rating.nhtsa ? current : best
-              );
+              winner = validVehicles.reduce((best, current) => {
+                const bestRating = best.data?.safety_rating?.nhtsa ?? 0;
+                const currentRating = current.data?.safety_rating?.nhtsa ?? 0;
+                return currentRating > bestRating ? current : best;
+              });
               break;
             case "reliability":
-              winner = validVehicles.reduce((best, current) => 
-                current.data.reliability.score > best.data.reliability.score ? current : best
-              );
+              winner = validVehicles.reduce((best, current) => {
+                const bestScore = best.data?.reliability?.score ?? 0;
+                const currentScore = current.data?.reliability?.score ?? 0;
+                return currentScore > bestScore ? current : best;
+              });
               break;
             case "performance":
-              winner = validVehicles.reduce((best, current) => 
-                current.data.performance.horsepower > best.data.performance.horsepower ? current : best
-              );
+              winner = validVehicles.reduce((best, current) => {
+                const bestHp = best.data?.performance?.horsepower ?? 0;
+                const currentHp = current.data?.performance?.horsepower ?? 0;
+                return currentHp > bestHp ? current : best;
+              });
               break;
             default:
               winner = validVehicles[0];
           }
           
-          acc[criteria] = {
+          acc[key] = {
             winner: `${winner.vehicle.make} ${winner.vehicle.model}`,
             reason: getWinnerReason(criteria, winner)
           };
           
           return acc;
-        }, {}),
+        }, {} as Record<string, { winner: string; reason: string }>),
         
         recommendations: generateRecommendations(comparisonResults, comparisonCriteria)
       };
@@ -189,18 +230,18 @@ export const compareVehicles = createTool({
 /**
  * Helper function to generate winner reasons
  */
-function getWinnerReason(criteria: string, winner: any): string {
+function getWinnerReason(criteria: string, winner: VehicleComparisonResult): string {
   switch (criteria) {
     case "price":
-      return `Lowest typical price at $${winner.data.price.typical.toLocaleString()}`;
+      return `Lowest typical price at $${winner.data?.price?.typical?.toLocaleString() ?? 'N/A'}`;
     case "fuel_efficiency":
-      return `Best combined MPG at ${winner.data.fuel_efficiency.combined} MPG`;
+      return `Best combined MPG at ${winner.data?.fuel_efficiency?.combined ?? 'N/A'} MPG`;
     case "safety_rating":
-      return `Highest NHTSA rating of ${winner.data.safety_rating.nhtsa} stars`;
+      return `Highest NHTSA rating of ${winner.data?.safety_rating?.nhtsa ?? 'N/A'} stars`;
     case "reliability":
-      return `Highest reliability score of ${winner.data.reliability.score}/10`;
+      return `Highest reliability score of ${winner.data?.reliability?.score ?? 'N/A'}/10`;
     case "performance":
-      return `Most horsepower at ${winner.data.performance.horsepower} HP`;
+      return `Most horsepower at ${winner.data?.performance?.horsepower ?? 'N/A'} HP`;
     default:
       return "Best in category";
   }
@@ -209,7 +250,7 @@ function getWinnerReason(criteria: string, winner: any): string {
 /**
  * Helper function to generate recommendations
  */
-function generateRecommendations(results: any[], criteria: string[]): any {
+function generateRecommendations(results: VehicleComparisonResult[], criteria: string[]): any {
   const available = results.filter(r => r.available);
   
   if (available.length === 0) {
@@ -221,7 +262,8 @@ function generateRecommendations(results: any[], criteria: string[]): any {
   // Find best overall value
   if (criteria.includes("price") && criteria.includes("reliability")) {
     const bestValue = available.find(v => 
-      v.data.reliability?.score >= 8.0 && v.data.price?.typical <= 30000
+      v.data?.reliability?.score !== undefined && v.data.reliability.score >= 8.0 && 
+      v.data?.price?.typical !== undefined && v.data.price.typical <= 30000
     );
     if (bestValue) {
       recommendations.push(`Best value: ${bestValue.vehicle.make} ${bestValue.vehicle.model} combines good reliability with reasonable pricing.`);
@@ -231,7 +273,8 @@ function generateRecommendations(results: any[], criteria: string[]): any {
   // Find most practical
   if (criteria.includes("fuel_efficiency") && criteria.includes("safety_rating")) {
     const mostPractical = available.find(v =>
-      v.data.fuel_efficiency?.combined >= 30 && v.data.safety_rating?.nhtsa >= 5
+      v.data?.fuel_efficiency?.combined !== undefined && v.data.fuel_efficiency.combined >= 30 && 
+      v.data?.safety_rating?.nhtsa !== undefined && v.data.safety_rating.nhtsa >= 5
     );
     if (mostPractical) {
       recommendations.push(`Most practical: ${mostPractical.vehicle.make} ${mostPractical.vehicle.model} offers excellent fuel economy and top safety ratings.`);

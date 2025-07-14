@@ -27,20 +27,21 @@ export const getMarketInsights = createTool({
   description: "Get market insights, trends, and analysis for vehicle markets in specific locations",
   inputSchema: getMarketInsightsSchema,
   
-  execute: async ({ location, vehicleType, brand, timeframe }) => {
+  execute: async (context) => {
+    const { location, vehicleType, brand, timeframe } = context.context;
     try {
       // Mock market data - in production this would integrate with market APIs
       const baseInsights = {
         marketCondition: "Seller's Market", // or "Buyer's Market", "Balanced"
         inventoryLevel: "Low", // "Low", "Medium", "High"
-        price趋势: "Increasing", // "Increasing", "Stable", "Decreasing"
+        priceTrend: "Increasing", // "Increasing", "Stable", "Decreasing"
         demandLevel: "High", // "Low", "Medium", "High"
         avgDaysOnLot: 25,
         competitionLevel: "High",
       };
       
       // Generate location-specific insights
-      const locationInsights = {
+      const locationInsights: any = {
         location,
         marketOverview: {
           condition: baseInsights.marketCondition,
@@ -48,13 +49,13 @@ export const getMarketInsights = createTool({
         },
         
         pricing: {
-          trend: baseInsights.price趋势,
-          description: baseInsights.price趋势 === "Increasing" 
+          trend: baseInsights.priceTrend,
+          description: baseInsights.priceTrend === "Increasing" 
             ? "Prices have been trending upward due to high demand and limited inventory"
-            : baseInsights.priceトレンド === "Decreasing"
+            : baseInsights.priceTrend === "Decreasing"
             ? "Prices are softening as inventory levels improve"
             : "Prices remain relatively stable with balanced supply and demand",
-          recommendedAction: baseInsights.priceトレンド === "Increasing"
+          recommendedAction: baseInsights.priceTrend === "Increasing"
             ? "Consider acting quickly if you find a good deal"
             : "Good time to negotiate on price",
         },
