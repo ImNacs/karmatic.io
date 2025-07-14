@@ -113,7 +113,7 @@ The new `AgencyMapEnhanced` component provides a superior map experience compare
 
 ## Data Structure
 
-The component expects agencies in the format returned by the n8n webhook:
+The component expects agencies with the following structure:
 - `id`: Unique identifier
 - `name`: Agency name
 - `address`: Full address

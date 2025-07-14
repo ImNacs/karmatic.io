@@ -49,12 +49,20 @@ export function useGooglePlaces() {
     suggestion: google.maps.places.AutocompleteSuggestion
   ): PlacePrediction => {
     const { placePrediction } = suggestion;
+    
+    // Defensive checks for nested properties
+    const mainText = placePrediction?.structuredFormat?.mainText?.text || 
+                    placePrediction?.text?.text || 
+                    '';
+    const secondaryText = placePrediction?.structuredFormat?.secondaryText?.text || 
+                         '';
+    
     return {
-      place_id: placePrediction.placeId,
-      description: placePrediction.text.text,
+      place_id: placePrediction?.placeId || '',
+      description: placePrediction?.text?.text || '',
       structured_formatting: {
-        main_text: placePrediction.structuredFormat.mainText.text,
-        secondary_text: placePrediction.structuredFormat.secondaryText.text,
+        main_text: mainText,
+        secondary_text: secondaryText,
       },
       terms: [], // Terms are not directly available in new API
     };
@@ -111,24 +119,42 @@ export function useGooglePlaces() {
       return getPlacePredictionsLegacy(input, options);
     }
 
+    // Early return for empty input
+    if (!input || input.trim().length === 0) {
+      return [];
+    }
+
     const sessionToken = getSessionToken();
     
     const request = {
       input,
-      includedRegionCodes: ["MX"], // Replaces componentRestrictions
-      includedTypes: ["geocode"], // Replaces types
-      sessionToken,
-      ...options,
+      sessionToken: sessionToken, // Pass the token object directly
+      region: "MX", // Use region instead of includedRegionCodes
+      includedPrimaryTypes: ["geocode"], // Use includedPrimaryTypes, not includedTypes
+      // Only include valid options for the new API
+      ...(options && {
+        locationBias: options.locationBias,
+        locationRestriction: options.locationRestriction,
+        origin: options.origin,
+      }),
     };
 
     try {
+      console.log("AutocompleteSuggestion request:", request);
       const { suggestions } = await window.google.maps.places.AutocompleteSuggestion
         .fetchAutocompleteSuggestions(request);
+      
+      console.log("AutocompleteSuggestion response:", suggestions);
       
       // Transform suggestions to match legacy format
       return suggestions.map(transformSuggestion);
     } catch (error) {
-      console.error("AutocompleteSuggestion error:", error);
+      console.error("AutocompleteSuggestion error details:", {
+        error,
+        message: error?.message,
+        stack: error?.stack,
+        request
+      });
       // Fallback to legacy API on error
       console.warn("Falling back to legacy API due to error");
       return getPlacePredictionsLegacy(input, options);
@@ -140,8 +166,19 @@ export function useGooglePlaces() {
     input: string,
     options: Partial<google.maps.places.AutocompletionRequest> = {}
   ): Promise<PlacePrediction[]> => {
+    // Return empty array for empty input
+    if (!input || input.trim().length === 0) {
+      return Promise.resolve([]);
+    }
+
+    // Check if Google Maps is loaded
+    if (!isLoaded) {
+      console.warn("Google Maps not loaded yet");
+      return Promise.resolve([]);
+    }
+
     // Use new API if enabled
-    if (USE_NEW_AUTOCOMPLETE_API && isLoaded) {
+    if (USE_NEW_AUTOCOMPLETE_API) {
       return getPlacePredictionsNew(input, options);
     }
     

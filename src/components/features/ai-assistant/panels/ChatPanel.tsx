@@ -45,10 +45,6 @@ export function ChatPanel() {
     }
   }
   
-  const handleSuggestionClick = (suggestion: string) => {
-    setInputValue(suggestion)
-    inputRef.current?.focus()
-  }
   
   return (
     <div className="h-full flex flex-col">
@@ -85,23 +81,6 @@ export function ChatPanel() {
                   {message.content}
                 </p>
                 
-                {/* Suggested Actions */}
-                {message.metadata?.suggestedActions && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
-                    <p className="text-xs text-gray-500 font-medium">Acciones sugeridas:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {message.metadata.suggestedActions.map((action, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleSuggestionClick(action)}
-                          className="text-xs px-3 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          {action}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
               
               {message.type === 'user' && (
@@ -139,56 +118,11 @@ export function ChatPanel() {
               <Sparkles className="w-8 h-8 text-white" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              ¡Hola! Soy tu AI Assistant
+              Chat Assistant
             </h3>
-            
-            {/* Context-specific empty state */}
-            {searchContext?.currentSearch ? (
-              <>
-                <p className="text-gray-600 dark:text-gray-300 mb-2 max-w-sm">
-                  Estoy listo para ayudarte con tu búsqueda en{' '}
-                  <span className="font-semibold text-blue-600">
-                    {searchContext.currentSearch.location}
-                  </span>
-                </p>
-                {searchContext.currentSearch.query && (
-                  <p className="text-sm text-gray-500 mb-4">
-                    Búsqueda: &ldquo;{searchContext.currentSearch.query}&rdquo;
-                  </p>
-                )}
-                
-                {/* Search-specific suggestions */}
-                <div className="space-y-2 w-full max-w-sm">
-                  {[
-                    `¿Cuáles son los mejores concesionarios en ${searchContext.currentSearch.location}?`,
-                    'Analiza los precios y calificaciones',
-                    'Muéstrame opciones de financiamiento',
-                    'Compara las agencias encontradas'
-                  ].map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSuggestionClick(suggestion)}
-                      className="w-full text-left p-3 text-sm bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-900 dark:text-gray-100"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-sm">
-                  Puedo ayudarte a analizar concesionarios, comparar precios y encontrar las mejores opciones.
-                </p>
-                
-                {/* Generic suggestions when no search context */}
-                <div className="space-y-2 w-full max-w-sm">
-                  <p className="text-sm text-gray-500 mb-4">
-                    Por favor selecciona una búsqueda para comenzar
-                  </p>
-                </div>
-              </>
-            )}
+            <p className="text-gray-600 dark:text-gray-300 max-w-sm">
+              Escribe tu pregunta para comenzar
+            </p>
           </div>
         )}
         

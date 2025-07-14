@@ -8,14 +8,15 @@ export type PanelType = 'chat' | 'none'
 
 interface ChatMessage {
   id: string
-  type: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'system'
   content: string
   timestamp: Date
   metadata?: {
-    suggestedActions?: string[]
     dealerData?: any
     calculations?: any
   }
+  // Backward compatibility
+  type?: 'user' | 'assistant'
 }
 
 interface AIInsight {
@@ -58,6 +59,10 @@ interface AIAssistantContextType {
   // Context Data
   currentSearchId: string | null
   searchContext: any
+  
+  // Connection and sync state
+  isOnline: boolean
+  syncStatus: 'synced' | 'syncing' | 'offline' | 'error'
 }
 
 const AIAssistantContext = createContext<AIAssistantContextType | null>(null)
@@ -87,6 +92,10 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
   // Chat State - Maps by searchId for isolation
   const [messagesBySearch, setMessagesBySearch] = useState<Map<string, ChatMessage[]>>(new Map())
   const [typingBySearch, setTypingBySearch] = useState<Map<string, boolean>>(new Map())
+  
+  // Connection and sync state
+  const [isOnline, setIsOnline] = useState(true)
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'offline' | 'error'>('synced')
   
   // Current search states (derived from maps)
   const messages = currentSearchId ? messagesBySearch.get(currentSearchId) || [] : []
@@ -125,31 +134,176 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Online/offline detection
+  useEffect(() => {
+    const updateOnlineStatus = () => {
+      const online = navigator.onLine
+      setIsOnline(online)
+      setSyncStatus(online ? 'synced' : 'offline')
+      console.log(online ? '🌐 Back online' : '📴 Gone offline')
+    }
+
+    updateOnlineStatus()
+    window.addEventListener('online', updateOnlineStatus)
+    window.addEventListener('offline', updateOnlineStatus)
+    
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus)
+      window.removeEventListener('offline', updateOnlineStatus)
+    }
+  }, [])
   
   // Persistence functions (defined first)
   const saveConversationToStorage = useCallback((searchId: string, messages: ChatMessage[]) => {
     try {
+      // Save to sessionStorage for immediate access
       sessionStorage.setItem(`ai_conversation_${searchId}`, JSON.stringify(messages))
+      
+      // Database saving happens automatically in the API endpoint
+      // No need to manually sync here as messages are saved when sent
     } catch (error) {
       console.warn('Failed to save conversation to storage:', error)
     }
   }, [])
   
+  // Migrate sessionStorage conversation to database
+  const migrateConversationToDatabase = useCallback(async (searchId: string, messages: ChatMessage[], context?: any): Promise<boolean> => {
+    try {
+      console.log('🔄 Migrating conversation to database:', searchId)
+      
+      const response = await fetch('/api/conversations/migrate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          searchId,
+          messages: messages.map(msg => ({
+            ...msg,
+            timestamp: msg.timestamp.toISOString()
+          })),
+          context
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Migration successful:', data)
+        return true
+      } else {
+        console.error('❌ Migration failed:', response.status)
+        return false
+      }
+    } catch (error) {
+      console.error('❌ Migration error:', error)
+      return false
+    }
+  }, [])
+
+  // Async database loading (background sync) - defined first
+  const loadFromDatabaseAsync = useCallback(async (searchId: string, existingMessages: ChatMessage[]) => {
+    try {
+      // Skip if offline
+      if (!navigator.onLine) {
+        console.log('📴 Offline mode: Skipping database sync')
+        return
+      }
+
+      console.log('🔍 Background: Syncing with database for', searchId)
+      
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
+      
+      try {
+        const response = await fetch(`/api/conversations/${searchId}`, {
+          signal: controller.signal
+        })
+        clearTimeout(timeoutId)
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.messages?.length > 0) {
+            console.log('✅ Database sync: Found', data.messages.length, 'messages')
+            
+            const dbMessages = data.messages.map((msg: any) => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp)
+            }))
+            
+            // Only update UI if database has newer/different data
+            if (dbMessages.length !== existingMessages.length || 
+                JSON.stringify(dbMessages) !== JSON.stringify(existingMessages)) {
+              console.log('🔄 Updating UI with database data')
+              
+              // Update sessionStorage
+              sessionStorage.setItem(`ai_conversation_${searchId}`, JSON.stringify(dbMessages))
+              
+              // Update React state
+              setMessagesBySearch(prev => {
+                const newMap = new Map(prev)
+                newMap.set(searchId, dbMessages)
+                return newMap
+              })
+            }
+            return
+          }
+        }
+        
+        // If no data in database but we have sessionStorage, migrate it
+        if (existingMessages.length > 0) {
+          console.log('🔄 Background: Auto-migrating sessionStorage to database')
+          migrateConversationToDatabase(searchId, existingMessages)
+            .then((success) => {
+              if (success) {
+                console.log('✅ Background migration completed')
+              }
+            })
+            .catch((error) => {
+              console.error('❌ Background migration error:', error)
+            })
+        }
+        
+      } catch (fetchError) {
+        clearTimeout(timeoutId)
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          console.log('⏰ Background database sync timed out')
+        } else {
+          console.log('🌐 Background sync failed:', fetchError)
+        }
+      }
+    } catch (error) {
+      console.warn('Background database sync error:', error)
+    }
+  }, [migrateConversationToDatabase])
+
+  // Load immediately from sessionStorage (sync), then try database (async)
   const loadConversationFromStorage = useCallback((searchId: string): ChatMessage[] => {
+    // Always load from sessionStorage first for immediate UX
     try {
       const stored = sessionStorage.getItem(`ai_conversation_${searchId}`)
       if (stored) {
         const messages = JSON.parse(stored)
-        return messages.map((msg: any) => ({
+        console.log('📱 Loaded', messages.length, 'messages from sessionStorage (immediate)')
+        
+        const chatMessages = messages.map((msg: any) => ({
           ...msg,
           timestamp: new Date(msg.timestamp)
         }))
+
+        // Async: Try to update from database in background
+        loadFromDatabaseAsync(searchId, chatMessages)
+        
+        return chatMessages
       }
     } catch (error) {
-      console.warn('Failed to load conversation from storage:', error)
+      console.warn('Failed to load from sessionStorage:', error)
     }
+    
+    // If no sessionStorage, try database immediately (blocking)
+    loadFromDatabaseAsync(searchId, [])
     return []
-  }, [])
+  }, [loadFromDatabaseAsync])
 
   // Search-specific helper functions
   const getMessagesForSearch = useCallback((searchId: string): ChatMessage[] => {
@@ -192,9 +346,9 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
   // Initialize conversation when search context changes
   useEffect(() => {
     if (currentSearchId) {
-      // Load existing conversation from storage
+      // Load existing conversation from storage (immediate from sessionStorage)
       const existingMessages = loadConversationFromStorage(currentSearchId)
-      
+        
       if (existingMessages.length > 0) {
         // Restore existing conversation
         setMessagesBySearch(prev => {
@@ -202,29 +356,9 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
           newMap.set(currentSearchId, existingMessages)
           return newMap
         })
-      } else if (messages.length === 0 && searchContext?.currentSearch) {
-        // Create welcome message for new conversation only if we have search context
-        const welcomeContent = generateWelcomeMessage(searchContext.currentSearch)
-        if (welcomeContent) {
-          const welcomeMessage: ChatMessage = {
-            id: `welcome-${currentSearchId}-${Date.now()}`,
-            type: 'assistant',
-            content: welcomeContent,
-            timestamp: new Date(),
-            metadata: {
-              suggestedActions: [
-                '¿Cuáles son los mejores concesionarios aquí?',
-                'Muéstrame opciones de financiamiento',
-                'Calcula pagos mensuales',
-                'Compara precios'
-              ]
-            }
-          }
-          addMessageToSearch(currentSearchId, welcomeMessage)
-        }
       }
     }
-  }, [currentSearchId, searchContext, addMessageToSearch, loadConversationFromStorage, messages.length])
+  }, [currentSearchId, loadConversationFromStorage])
   
   const openAssistant = useCallback((panel: PanelType = 'chat') => {
     setIsOpen(true)
@@ -238,9 +372,18 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
   const sendMessage = useCallback(async (content: string) => {
     if (!currentSearchId) return
     
+    // Check if we're online before attempting to send
+    if (!isOnline) {
+      console.log('📴 Cannot send message while offline')
+      // TODO: Could queue messages for later sending
+      return
+    }
+    
+    setSyncStatus('syncing')
+    
     const userMessage: ChatMessage = {
       id: `user-${currentSearchId}-${Date.now()}`,
-      type: 'user',
+      role: 'user',
       content,
       timestamp: new Date()
     }
@@ -257,7 +400,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
       // Convert messages to API format, including the new user message
       const allMessages = [...getMessagesForSearch(currentSearchId), userMessage]
       const apiMessages = allMessages.map(msg => ({
-        role: msg.type === 'user' ? 'user' : 'assistant' as 'user' | 'assistant',
+        role: msg.role,
         content: msg.content
       }))
       
@@ -290,7 +433,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
         // Add initial empty assistant message
         const assistantMessage: ChatMessage = {
           id: assistantMessageId,
-          type: 'assistant',
+          role: 'assistant',
           content: '',
           timestamp: new Date()
         }
@@ -306,31 +449,38 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
               const lines = chunk.split('\n')
               
               for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6)
-                  if (data === '[DONE]') continue
-                  
-                  try {
-                    const parsed = JSON.parse(data)
-                    if (parsed.delta?.content) {
-                      streamedContent += parsed.delta.content
-                      
-                      // Update the message with streamed content
-                      setMessagesBySearch(prev => {
-                        const newMap = new Map(prev)
-                        const messages = newMap.get(currentSearchId) || []
-                        const updatedMessages = messages.map(msg => 
-                          msg.id === assistantMessageId 
-                            ? { ...msg, content: streamedContent }
-                            : msg
-                        )
-                        newMap.set(currentSearchId, updatedMessages)
-                        return newMap
-                      })
-                    }
-                  } catch (e) {
-                    // Skip invalid JSON chunks
+                if (!line.trim()) continue
+                
+                // Handle AI SDK streaming format
+                const colonIndex = line.indexOf(':')
+                if (colonIndex === -1) continue
+                
+                const prefix = line.slice(0, colonIndex)
+                const content = line.slice(colonIndex + 1)
+                
+                try {
+                  // Handle text chunks (prefix is a number like "0", "1", etc.)
+                  if (/^\d+$/.test(prefix)) {
+                    const textContent = JSON.parse(content)
+                    streamedContent += textContent
+                    
+                    // Update the message with streamed content
+                    setMessagesBySearch(prev => {
+                      const newMap = new Map(prev)
+                      const messages = newMap.get(currentSearchId) || []
+                      const updatedMessages = messages.map(msg => 
+                        msg.id === assistantMessageId 
+                          ? { ...msg, content: streamedContent }
+                          : msg
+                      )
+                      newMap.set(currentSearchId, updatedMessages)
+                      return newMap
+                    })
                   }
+                  // Handle other message types (f, e, d) - we can ignore these for now
+                } catch (e) {
+                  // Skip invalid chunks
+                  console.debug('Skipping chunk:', line)
                 }
               }
             }
@@ -347,7 +497,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
         
         const assistantMessage: ChatMessage = {
           id: assistantMessageId,
-          type: 'assistant',
+          role: 'assistant',
           content: data.message?.content || data.response || 'No pude procesar tu mensaje.',
           timestamp: new Date(),
           metadata: data.message?.metadata || data.metadata
@@ -361,7 +511,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
       
       const errorMessage: ChatMessage = {
         id: `error-${currentSearchId}-${Date.now()}`,
-        type: 'assistant',
+        role: 'assistant',
         content: error instanceof Error && error.message.includes('AI service') 
           ? 'El servicio de AI no está disponible en este momento. Por favor intenta más tarde.'
           : 'Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.',
@@ -380,10 +530,14 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
       }
       
       addMessageToSearch(currentSearchId, errorMessage)
+      setSyncStatus('error')
     } finally {
       setTypingForSearch(currentSearchId, false)
+      if (syncStatus === 'syncing') {
+        setSyncStatus('synced')
+      }
     }
-  }, [currentSearchId, searchContext, addMessageToSearch, getMessagesForSearch, setTypingForSearch, saveConversationToStorage])
+  }, [currentSearchId, searchContext, addMessageToSearch, getMessagesForSearch, setTypingForSearch, saveConversationToStorage, isOnline, syncStatus])
   
   const addInsight = useCallback((insight: Omit<AIInsight, 'id' | 'timestamp'>) => {
     if (!currentSearchId) return
@@ -447,7 +601,11 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
     
     // Context Data
     currentSearchId,
-    searchContext
+    searchContext,
+    
+    // Connection and sync state
+    isOnline,
+    syncStatus
   }
   
   return (
@@ -480,17 +638,3 @@ function extractUserPreferences(searches: any[]) {
   }
 }
 
-function generateWelcomeMessage(search: any) {
-  if (!search) {
-    return '' // No welcome message if no search context
-  }
-  
-  const location = search.location
-  const query = search.query
-  
-  if (query) {
-    return `¡Hola! Veo que estás buscando ${query} en ${location}. Te puedo ayudar a encontrar las mejores opciones y analizar los concesionarios de la zona. ¿En qué te puedo asistir?`
-  }
-  
-  return `¡Hola! Estás explorando concesionarios en ${location}. Puedo ayudarte a analizar precios, inventario, reseñas y opciones de financiamiento. ¿Qué te gustaría saber?`
-}

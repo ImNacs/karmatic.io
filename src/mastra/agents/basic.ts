@@ -4,30 +4,49 @@
  */
 
 import { Agent } from "@mastra/core";
+import { createOpenAI } from "@ai-sdk/openai";
+
+// Configure OpenRouter provider
+const openrouter = createOpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY || '',
+  headers: {
+    'HTTP-Referer': 'https://karmatic.io',
+    'X-Title': 'Karmatic AI Assistant',
+  },
+});
+
+/**
+ * Available models via OpenRouter
+ * 
+ * @remarks
+ * Models are sorted by capability and use case:
+ * 
+ * Top Tier Models:
+ * - anthropic/claude-3-5-sonnet - Best for general tasks ($3/1M in, $15/1M out)
+ * - moonshotai/kimi-k2 - Specialized for agentic tasks, 128K context ($0.57/1M in, $2.30/1M out)
+ * - openai/gpt-4-turbo-preview - Strong general model
+ * 
+ * Fast & Affordable:
+ * - anthropic/claude-3-haiku - Very fast, good quality
+ * - openai/gpt-3.5-turbo - Fast and cheap
+ * 
+ * Open Source:
+ * - google/gemini-pro - Free tier available
+ * - meta-llama/llama-3-70b-instruct - Open weights
+ */
+
+// Get model from environment or use default
+const selectedModel = process.env.AI_MODEL || "moonshotai/kimi-k2";
+
+console.log(`🤖 Using model: ${selectedModel}`);
 
 /**
  * Basic agent using OpenRouter for model access
- * 
- * @remarks
- * This agent uses OpenRouter which provides access to multiple AI models
- * through a single API. You can change the model by updating the 'name' field.
- * 
- * Available models include:
- * - anthropic/claude-3-5-sonnet
- * - openai/gpt-4-turbo-preview
- * - google/gemini-pro
- * - meta-llama/llama-3-70b-instruct
  */
 export const basicAgent = new Agent({
   name: "Basic Assistant",
-  description: "A simple helpful assistant powered by OpenRouter",
+  description: "A helpful assistant powered by OpenRouter",
   instructions: "You are a helpful assistant. Answer questions concisely and accurately.",
-  model: {
-    provider: "OPENROUTER",
-    name: "anthropic/claude-3-5-sonnet", // High quality model
-    // Alternative models:
-    // name: "openai/gpt-4-turbo-preview",
-    // name: "google/gemini-pro",
-    // name: "meta-llama/llama-3-70b-instruct",
-  },
+  model: openrouter(selectedModel),
 });

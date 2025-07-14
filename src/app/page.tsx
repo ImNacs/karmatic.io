@@ -100,10 +100,9 @@ export default function Home() {
     } catch (error) {
       console.error('Error processing search:', error)
       toast.error('Error al procesar la búsqueda')
+      setIsLoading(false)
       // Navigate back to home on error
       router.push('/')
-    } finally {
-      setIsLoading(false)
     }
   }
 

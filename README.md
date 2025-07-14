@@ -22,7 +22,7 @@ A modern application for discovering, analyzing, and selecting the best automoti
 - Comprehensive test coverage
 
 ### 🚧 In Development
-- ~~Real-time AI chat functionality~~ ✅ **AI Assistant Integration with Mastra (Phase 1 Complete)**
+- AI-powered search and recommendations with Mastra
 - Advanced filtering options
 - Payment integration for premium features
 - Multi-language support
@@ -88,6 +88,7 @@ A modern application for discovering, analyzing, and selecting the best automoti
 - **ORM:** Prisma 6
 - **Authentication:** Clerk
 - **API:** Next.js API Routes
+- **AI Integration:** Mastra framework with OpenRouter
 - **Webhooks:** Clerk webhooks for user sync
 - **Session Management:** Cookie-based with nanoid
 - **Soft Delete:** 30-day recovery period for deleted data
@@ -145,18 +146,13 @@ DIRECT_URL="postgresql://[user]:[password]@[host]:5432/postgres"
 
 # Google Maps
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key
+NEXT_PUBLIC_GOOGLE_MAP_ID=your_map_id
 
 # GTM (optional)
 NEXT_PUBLIC_GTM_ID=GTM-XXXXXX
 
-# AI Providers (at least one required)
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-# See src/mastra/README.md for all supported providers
-
-# Mastra Configuration
-DEFAULT_LLM_PROVIDER=openai
-MASTRA_LOG_LEVEL=info
+# AI Integration - OpenRouter
+OPENROUTER_API_KEY=your_openrouter_api_key
 
 # Cleanup Job (optional)
 CLEANUP_SECRET_KEY=your_secret_key_for_cleanup_job
@@ -232,11 +228,7 @@ karmatic/
 │   │   └── supabase/           # Database clients
 │   ├── mastra/                  # AI Agent System
 │   │   ├── agents/             # AI agent definitions
-│   │   ├── config/             # LLM configuration
-│   │   ├── memory/             # Agent memory management
-│   │   ├── tools/              # Agent tools/functions
-│   │   ├── workflows/          # Multi-agent workflows
-│   │   └── README.md           # Mastra documentation
+│   │   └── index.ts            # Mastra configuration
 │   ├── types/                   # TypeScript definitions
 │   └── middleware.ts            # Next.js middleware
 ├── prisma/
@@ -303,7 +295,7 @@ pnpm test:e2e
 - [x] Soft delete with recovery
 
 ### Phase 2 (Current) 🚧
-- [ ] AI-powered chat interface
+- [ ] AI-powered search with Mastra
 - [ ] Advanced filtering options
 - [ ] Premium subscription tiers
 - [ ] Email notifications

@@ -12,7 +12,6 @@ export function ChatPanelMobile() {
   const [input, setInput] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const [showQuickActions, setShowQuickActions] = useState(true)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -34,7 +33,6 @@ export function ChatPanelMobile() {
     if (input.trim()) {
       sendMessage(input.trim())
       setInput("")
-      setShowQuickActions(false)
     }
   }
 
@@ -45,20 +43,6 @@ export function ChatPanelMobile() {
     }
   }
 
-  const quickActions = [
-    "¿Cuál agencia tiene mejor calificación?",
-    "Compara precios entre agencias",
-    "¿Qué agencia está más cerca?",
-    "Muéstrame las especialidades"
-  ]
-
-  const handleQuickAction = (action: string) => {
-    setInput(action)
-    setShowQuickActions(false)
-    setTimeout(() => {
-      handleSend()
-    }, 100)
-  }
 
   const formatTime = (date: Date) => {
     return new Intl.DateTimeFormat("es-MX", {
@@ -80,27 +64,10 @@ export function ChatPanelMobile() {
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
               <FiMessageSquare className="w-6 h-6 text-muted-foreground" />
             </div>
-            <h3 className="text-base font-medium mb-1">Pregunta algo...</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Información sobre las agencias encontradas
+            <h3 className="text-base font-medium mb-1">Chat Assistant</h3>
+            <p className="text-sm text-muted-foreground">
+              Escribe tu pregunta para comenzar
             </p>
-            
-            {showQuickActions && (
-              <div className="space-y-2">
-                {quickActions.map((action, index) => (
-                  <motion.button
-                    key={action}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    onClick={() => handleQuickAction(action)}
-                    className="w-full text-left p-3 rounded-lg bg-accent/50 hover:bg-accent transition-colors text-sm haptic-press"
-                  >
-                    {action}
-                  </motion.button>
-                ))}
-              </div>
-            )}
           </motion.div>
         )}
 
@@ -197,7 +164,7 @@ export function ChatPanelMobile() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Pregunta algo..."
+            placeholder="Escribe tu pregunta..."
             className={cn(
               "w-full resize-none rounded-full bg-muted px-4 py-3 pr-12",
               "focus:outline-none focus:ring-1 focus:ring-border",
