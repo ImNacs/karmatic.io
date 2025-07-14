@@ -138,8 +138,12 @@ export async function POST(request: Request) {
         }
       )
       console.log('✅ User message saved')
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error saving user message:', error)
+      // Continue even if saving fails - don't block the chat
+      if (error?.code === '42501') {
+        console.warn('⚠️ Database permission issue - see docs/database-permissions-fix.md')
+      }
     }
     
     // Get the basic agent
@@ -183,8 +187,11 @@ export async function POST(request: Request) {
             }
           ).then(() => {
             console.log('✅ Assistant response saved')
-          }).catch((error) => {
+          }).catch((error: any) => {
             console.error('❌ Error saving assistant response:', error)
+            if (error?.code === '42501') {
+              console.warn('⚠️ Database permission issue - see docs/database-permissions-fix.md')
+            }
           })
         }
       }
