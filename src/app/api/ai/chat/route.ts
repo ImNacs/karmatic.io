@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { mastra } from '@/src/mastra'
-import { prepareContext, type AgentContext } from '@/src/mastra/agents/karmatic-assistant'
+import { mastra } from '@/mastra'
+import { prepareContext, type AgentContext } from '@/mastra/agents/karmatic-assistant'
 
 export const runtime = 'edge'
 
