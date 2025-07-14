@@ -3,7 +3,7 @@
  * @module mastra/workflows/vehicle-search-workflow
  */
 
-import { Workflow, WorkflowStep } from "@mastra/core/workflow";
+import { Workflow, createWorkflow, createStep } from "@mastra/core/workflows";
 import { Agent } from "@mastra/core/agent";
 import { getDefaultModel } from "../config/llm-providers";
 import { getMemoryStore } from "../config/memory-store";

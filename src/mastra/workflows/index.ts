@@ -6,7 +6,12 @@
  * specialized agents to handle complex user requests.
  */
 
-// Core workflow exports
+// Core workflow imports
+import { vehicleSearchWorkflow } from "./vehicle-search-workflow";
+import { dealershipAnalysisWorkflow } from "./dealership-analysis-workflow";
+import { recommendationWorkflow } from "./recommendation-workflow";
+
+// Re-export workflows
 export { vehicleSearchWorkflow } from "./vehicle-search-workflow";
 export { dealershipAnalysisWorkflow } from "./dealership-analysis-workflow";
 export { recommendationWorkflow } from "./recommendation-workflow";
