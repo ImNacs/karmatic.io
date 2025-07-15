@@ -92,6 +92,12 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.50.3
         version: 2.50.3
+      '@upstash/redis':
+        specifier: ^1.35.1
+        version: 1.35.1
+      '@upstash/vector':
+        specifier: ^1.2.2
+        version: 1.2.2
       '@vis.gl/react-google-maps':
         specifier: ^1.5.4
         version: 1.5.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -2762,6 +2768,9 @@ packages:
 
   '@upstash/redis@1.35.1':
     resolution: {integrity: sha512-sIMuAMU9IYbE2bkgDby8KLoQKRiBMXn0moXxqLvUmQ7VUu2CvulZLtK8O0x3WQZFvvZhU5sRC2/lOVZdGfudkA==}
+
+  '@upstash/vector@1.2.2':
+    resolution: {integrity: sha512-ptQ9xnxtKqmpNK52PCcHCszlPOLxIBfjsv7ty8RoF95pkjctS9rSjTQ3Pl9bx5VFbpDj+0dMXw88WLt6swDkgQ==}
 
   '@vis.gl/react-google-maps@1.5.4':
     resolution: {integrity: sha512-pD3e2wDtOfd439mamkacRgrM6I2B/lue61QCR0pGQT8MVaG9pz9/LajHbsjZW2lms8Ao8mf2PQJeiGC2FxI0Fw==}
@@ -9122,6 +9131,8 @@ snapshots:
   '@upstash/redis@1.35.1':
     dependencies:
       uncrypto: 0.1.3
+
+  '@upstash/vector@1.2.2': {}
 
   '@vis.gl/react-google-maps@1.5.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
