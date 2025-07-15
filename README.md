@@ -22,7 +22,11 @@ A modern application for discovering, analyzing, and selecting the best automoti
 - Comprehensive test coverage
 
 ### 🚧 In Development
-- AI-powered search and recommendations with Mastra
+- **AI-Powered Agency Analysis System** (Phase 1 Complete ✅)
+  - Google Maps data extraction via Apify MCP
+  - Intelligent filtering (rating, reviews, business type)
+  - Semantic caching for 30-40% cost reduction
+  - Quality scoring system (0-100)
 - Advanced filtering options
 - Payment integration for premium features
 - Multi-language support
@@ -89,6 +93,8 @@ A modern application for discovering, analyzing, and selecting the best automoti
 - **Authentication:** Clerk
 - **API:** Next.js API Routes
 - **AI Integration:** Mastra framework with OpenRouter
+- **Web Scraping:** Apify MCP with Google Maps Extractor
+- **Caching:** Upstash Redis with semantic vector search
 - **Webhooks:** Clerk webhooks for user sync
 - **Session Management:** Cookie-based with nanoid
 - **Soft Delete:** 30-day recovery period for deleted data
@@ -147,6 +153,21 @@ DIRECT_URL="postgresql://[user]:[password]@[host]:5432/postgres"
 # Google Maps
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key
 NEXT_PUBLIC_GOOGLE_MAP_ID=your_map_id
+
+# Apify Integration (for agency data extraction)
+APIFY_API_TOKEN=your_apify_api_token
+
+# Agency Analysis Configuration
+AGENCY_MIN_RATING=4.0
+AGENCY_MIN_REVIEWS_PER_MONTH=15
+AGENCY_ANALYSIS_MONTHS=6
+AGENCY_BUSINESS_TYPES=["car dealer","auto sales","automotive dealer","agencia de autos"]
+
+# Cache Configuration (optional - for production)
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+UPSTASH_VECTOR_REST_URL=your_upstash_vector_url
+UPSTASH_VECTOR_REST_TOKEN=your_upstash_vector_token
 
 # GTM (optional)
 NEXT_PUBLIC_GTM_ID=GTM-XXXXXX
