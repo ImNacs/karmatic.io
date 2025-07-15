@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Premium registration modal with animated features showcase
+ * @module components/features/auth/components/RegistrationModal
+ */
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -19,17 +24,32 @@ import {
 import { trackEvent } from '@/lib/gtm/gtm'
 import { cn } from '@/lib/utils'
 
+/**
+ * Props for RegistrationModal component
+ * @interface RegistrationModalProps
+ */
 interface RegistrationModalProps {
+  /** Whether modal is open */
   isOpen: boolean
+  /** Callback to close modal */
   onClose: () => void
+  /** Search data to display in modal */
   searchData?: {
+    /** Search location */
     location: string
+    /** Search query */
     query?: string
+    /** Number of results found */
     resultsCount?: number
   }
+  /** Event trigger for analytics */
   trigger?: string
 }
 
+/**
+ * Premium features to display in modal
+ * @constant {Array<Object>} features
+ */
 const features = [
   {
     icon: FiSearch,

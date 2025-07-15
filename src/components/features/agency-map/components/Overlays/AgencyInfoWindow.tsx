@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Agency information window overlay for maps
+ * @module components/features/agency-map/components/Overlays/AgencyInfoWindow
+ */
+
 'use client'
 
 import React from 'react'
@@ -14,13 +19,36 @@ import {
 } from 'react-icons/fi'
 import type { Agency } from '@/types/agency'
 
+/**
+ * Props for AgencyInfoWindow component
+ * @interface AgencyInfoWindowProps
+ */
 interface AgencyInfoWindowProps {
+  /** Agency data to display */
   agency: Agency
+  /** Whether agency is selected for analysis */
   isSelected: boolean
+  /** Callback to select agency */
   onSelect: () => void
+  /** Callback to close info window */
   onClose: () => void
 }
 
+/**
+ * Agency information window overlay for map markers
+ * @component
+ * @param {AgencyInfoWindowProps} props - Component props
+ * @returns {JSX.Element} Agency info window with details and actions
+ * @example
+ * ```tsx
+ * <AgencyInfoWindow
+ *   agency={selectedAgency}
+ *   isSelected={false}
+ *   onSelect={() => selectAgency(agency.id)}
+ *   onClose={() => setShowInfo(false)}
+ * />
+ * ```
+ */
 export const AgencyInfoWindow: React.FC<AgencyInfoWindowProps> = ({ 
   agency, 
   isSelected, 

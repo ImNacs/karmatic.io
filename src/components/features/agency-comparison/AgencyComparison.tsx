@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Agency comparison modal with visual metrics
+ * @module components/features/agency-comparison/AgencyComparison
+ */
+
 "use client"
 
 import React from 'react'
@@ -20,21 +25,42 @@ import {
 } from 'react-icons/fi'
 import type { Agency } from '@/types/agency'
 
+/**
+ * Props for AgencyComparison component
+ * @interface AgencyComparisonProps
+ */
 interface AgencyComparisonProps {
+  /** Array of agencies to compare */
   agencies: Agency[]
+  /** Whether modal is open */
   isOpen: boolean
+  /** Callback to close modal */
   onClose: () => void
+  /** Callback to start detailed analysis */
   onStartAnalysis: () => void
 }
 
+/**
+ * Configuration for comparison metrics
+ * @interface ComparisonMetric
+ */
 interface ComparisonMetric {
+  /** Display label for the metric */
   label: string
+  /** Function to extract value from agency */
   getValue: (agency: Agency) => number | string
+  /** Optional formatter for display */
   format?: (value: number | string) => string
+  /** Whether higher values are better (default: true) */
   higherIsBetter?: boolean
+  /** Optional icon for the metric */
   icon?: React.ReactNode
 }
 
+/**
+ * Comparison metrics configuration
+ * @constant
+ */
 const metrics: ComparisonMetric[] = [
   {
     label: 'Calificación',
@@ -66,6 +92,21 @@ const metrics: ComparisonMetric[] = [
   }
 ]
 
+/**
+ * Agency comparison modal with side-by-side metrics
+ * @component
+ * @param {AgencyComparisonProps} props - Component props
+ * @returns {JSX.Element | null} Comparison modal or null if no agencies
+ * @example
+ * ```tsx
+ * <AgencyComparison
+ *   agencies={selectedAgencies}
+ *   isOpen={showComparison}
+ *   onClose={() => setShowComparison(false)}
+ *   onStartAnalysis={() => startAIAnalysis()}
+ * />
+ * ```
+ */
 export function AgencyComparison({ agencies, isOpen, onClose, onStartAnalysis }: AgencyComparisonProps) {
   if (agencies.length === 0) return null
 

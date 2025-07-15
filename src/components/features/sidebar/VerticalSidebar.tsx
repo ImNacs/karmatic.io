@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Vertical sidebar with navigation and user controls
+ * @module components/features/sidebar/VerticalSidebar
+ */
+
 "use client"
 
 import React, { useState, useEffect } from "react"
@@ -22,25 +27,48 @@ import {
 } from "react-icons/fi"
 import { SearchHistory } from "./SearchHistory"
 
+/**
+ * Props for VerticalSidebar component
+ * @interface VerticalSidebarProps
+ */
 interface VerticalSidebarProps {
+  /** Callback to open search modal */
   onOpenSearch?: () => void
+  /** Number of user tokens for display */
   userTokens?: number
 }
 
+/**
+ * Props for SidebarContent component
+ * @interface SidebarContentProps
+ */
 interface SidebarContentProps {
+  /** Current theme */
   theme: string;
+  /** Function to toggle theme */
   toggleTheme: () => void;
+  /** Navigation menu items */
   navigationItems: Array<{
     icon: React.ComponentType<{ className?: string }>;
     label: string;
     onClick: () => void;
   }>;
+  /** Number of user tokens */
   userTokens: number;
+  /** Whether component is mounted (SSR safety) */
   mounted: boolean;
+  /** Clerk user object */
   user: any;
+  /** Clerk sign out function */
   signOut: () => void;
 }
 
+/**
+ * Sidebar content component (memoized for performance)
+ * @component
+ * @param {SidebarContentProps} props - Component props
+ * @returns {JSX.Element} Sidebar content
+ */
 const SidebarContent = React.memo(({ 
   theme, 
   toggleTheme, 
@@ -142,6 +170,19 @@ const SidebarContent = React.memo(({
 
 SidebarContent.displayName = 'SidebarContent';
 
+/**
+ * Vertical sidebar with responsive design and navigation
+ * @component
+ * @param {VerticalSidebarProps} props - Component props
+ * @returns {JSX.Element} Sidebar for desktop and mobile header with sheet
+ * @example
+ * ```tsx
+ * <VerticalSidebar 
+ *   userTokens={150}
+ *   onOpenSearch={() => setShowSearch(true)}
+ * />
+ * ```
+ */
 export function VerticalSidebar({ onOpenSearch, userTokens = 150 }: VerticalSidebarProps) {
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme } = useTheme()

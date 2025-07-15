@@ -1,3 +1,8 @@
+/**
+ * @fileoverview User authentication synchronization component
+ * @module components/features/auth/components/AuthSync
+ */
+
 'use client'
 
 import { useEffect, useState } from 'react'

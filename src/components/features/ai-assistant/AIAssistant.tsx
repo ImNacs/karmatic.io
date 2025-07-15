@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Main AI Assistant interface component
+ * @module components/features/ai-assistant/AIAssistant
+ */
+
 'use client'
 
 import React from 'react'
@@ -5,6 +10,16 @@ import { X, MessageSquare } from 'lucide-react'
 import { useAIAssistant } from '@/contexts/AIAssistantContext'
 import { ChatPanel } from './panels/ChatPanel'
 
+/**
+ * AI Assistant main interface with header and chat panel
+ * @component
+ * @returns {JSX.Element} AI Assistant interface
+ * @example
+ * ```tsx
+ * // Usually rendered in sidebar or modal
+ * <AIAssistant />
+ * ```
+ */
 export function AIAssistant() {
   const { 
     closeAssistant,

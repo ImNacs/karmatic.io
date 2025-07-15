@@ -1,5 +1,10 @@
 "use client"
 
+/**
+ * @fileoverview Search history sidebar component with filtering and deletion
+ * @module components/features/sidebar/SearchHistory
+ */
+
 import React, { useState, useEffect, useMemo, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import { FiSearch, FiClock, FiMapPin, FiX, FiTrash2 } from 'react-icons/fi'
@@ -10,22 +15,47 @@ import { cn } from '@/lib/utils'
 import { useSearchHistory } from '@/contexts/SearchHistoryContext'
 import { motion, AnimatePresence } from 'motion/react'
 
+/**
+ * Individual search history item
+ * @interface SearchItem
+ */
 interface SearchItem {
+  /** Unique search ID */
   id: string
+  /** Search location */
   location: string
+  /** Optional search query */
   query: string | null
+  /** ISO timestamp */
   createdAt: string
 }
 
+/**
+ * Grouped searches by time period
+ * @interface SearchGroup
+ */
 interface SearchGroup {
+  /** Group label (e.g., "Hoy", "Ayer") */
   label: string
+  /** Searches in this group */
   searches: SearchItem[]
 }
 
+/**
+ * Props for SearchHistory component
+ * @interface SearchHistoryProps
+ */
 interface SearchHistoryProps {
+  /** Additional CSS classes */
   className?: string
 }
 
+/**
+ * Search history component with filtering and management
+ * @component
+ * @param {SearchHistoryProps} props - Component props
+ * @returns {JSX.Element} Search history sidebar
+ */
 function SearchHistoryComponent({ className }: SearchHistoryProps) {
   const { history, isLoading, deleteSearch } = useSearchHistory()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -62,6 +92,11 @@ function SearchHistoryComponent({ className }: SearchHistoryProps) {
     setDeletingId(null)
   }
   
+  /**
+   * Format timestamp to relative time
+   * @param {string} dateString - ISO date string
+   * @returns {string} Formatted relative time
+   */
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -284,5 +319,11 @@ function SearchHistoryComponent({ className }: SearchHistoryProps) {
   )
 }
 
-// Export memoized component to prevent unnecessary re-renders
+/**
+ * Memoized SearchHistory component to prevent unnecessary re-renders
+ * @example
+ * ```tsx
+ * <SearchHistory className="h-full" />
+ * ```
+ */
 export const SearchHistory = memo(SearchHistoryComponent)

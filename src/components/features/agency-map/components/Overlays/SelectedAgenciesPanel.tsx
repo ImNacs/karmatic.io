@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Selected agencies panel overlay for maps
+ * @module components/features/agency-map/components/Overlays/SelectedAgenciesPanel
+ */
+
 'use client'
 
 import React, { useState } from 'react'
@@ -8,13 +13,36 @@ import { Badge } from '@/components/ui/badge'
 import { FiChevronUp, FiX, FiStar, FiTrendingUp } from 'react-icons/fi'
 import type { Agency } from '@/types/agency'
 
+/**
+ * Props for SelectedAgenciesPanel component
+ * @interface SelectedAgenciesPanelProps
+ */
 interface SelectedAgenciesPanelProps {
+  /** All agencies data */
   agencies: Agency[]
+  /** Selected agency IDs */
   selectedAgencies: string[]
+  /** Callback to deselect an agency */
   onAgencyDeselect: (agencyId: string) => void
+  /** Callback to open comparison */
   onComparisonClick: () => void
 }
 
+/**
+ * Panel showing selected agencies with management options
+ * @component
+ * @param {SelectedAgenciesPanelProps} props - Component props
+ * @returns {JSX.Element} Collapsible panel with selected agencies
+ * @example
+ * ```tsx
+ * <SelectedAgenciesPanel
+ *   agencies={allAgencies}
+ *   selectedAgencies={selectedIds}
+ *   onAgencyDeselect={(id) => removeFromSelection(id)}
+ *   onComparisonClick={() => openComparison()}
+ * />
+ * ```
+ */
 export const SelectedAgenciesPanel: React.FC<SelectedAgenciesPanelProps> = ({
   agencies,
   selectedAgencies,

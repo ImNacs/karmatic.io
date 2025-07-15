@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Floating analysis button overlay for agency maps
+ * @module components/features/agency-map/components/Overlays/FloatingAnalysisButton
+ */
+
 'use client'
 
 import React from 'react'
@@ -5,12 +10,33 @@ import { motion } from 'motion/react'
 import { Button } from '@/components/ui/button'
 import { FiTrendingUp } from 'react-icons/fi'
 
+/**
+ * Props for FloatingAnalysisButton component
+ * @interface FloatingAnalysisButtonProps
+ */
 interface FloatingAnalysisButtonProps {
+  /** Number of selected agencies */
   selectedCount: number
+  /** Whether analysis is loading */
   isLoading: boolean
+  /** Callback to start analysis */
   onStartAnalysis: () => void
 }
 
+/**
+ * Floating analysis button that appears when agencies are selected
+ * @component
+ * @param {FloatingAnalysisButtonProps} props - Component props
+ * @returns {JSX.Element | null} Floating button or null if no selections
+ * @example
+ * ```tsx
+ * <FloatingAnalysisButton
+ *   selectedCount={2}
+ *   isLoading={false}
+ *   onStartAnalysis={() => startAnalysis()}
+ * />
+ * ```
+ */
 export const FloatingAnalysisButton: React.FC<FloatingAnalysisButtonProps> = ({
   selectedCount,
   isLoading,

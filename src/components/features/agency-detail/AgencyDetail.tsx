@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Detailed agency information modal
+ * @module components/features/agency-detail/AgencyDetail
+ */
+
 "use client"
 
 import { useState } from "react"
@@ -19,15 +24,42 @@ import {
 } from "react-icons/fi"
 import type { Agency } from "@/types/agency"
 
+/**
+ * Props for AgencyDetail component
+ * @interface AgencyDetailProps
+ */
 interface AgencyDetailProps {
+  /** Agency to display (null when closed) */
   agency: Agency | null
+  /** Whether modal is open */
   isOpen: boolean
+  /** Callback to close modal */
   onClose: () => void
+  /** Callback when agency is selected for analysis */
   onSelectForAnalysis: (agency: Agency) => void
+  /** Array of selected agency IDs */
   selectedAgencies: string[]
+  /** Maximum number of agencies that can be selected */
   maxSelections: number
 }
 
+/**
+ * Detailed agency information modal with image gallery and selection
+ * @component
+ * @param {AgencyDetailProps} props - Component props
+ * @returns {JSX.Element | null} Agency detail modal or null if no agency
+ * @example
+ * ```tsx
+ * <AgencyDetail
+ *   agency={selectedAgency}
+ *   isOpen={showDetail}
+ *   onClose={() => setShowDetail(false)}
+ *   onSelectForAnalysis={handleAgencySelect}
+ *   selectedAgencies={selectedIds}
+ *   maxSelections={3}
+ * />
+ * ```
+ */
 export function AgencyDetail({ 
   agency, 
   isOpen, 

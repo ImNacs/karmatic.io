@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Home page with search interface
+ * @module app/page
+ */
+
 "use client"
 
 import { useState } from "react"
@@ -12,6 +17,11 @@ import { trackEvent } from "@/lib/gtm/gtm"
 import { useGooglePlaces } from "@/lib/google-places"
 import { useSearchHistory } from "@/contexts/SearchHistoryContext"
 
+/**
+ * Home page component with agency search functionality
+ * @component
+ * @returns {JSX.Element} Home page with search interface
+ */
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [showRegistrationModal, setShowRegistrationModal] = useState(false)
