@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Scrollable area component with custom scrollbars
+ * @module components/ui/scroll-area
+ */
+
 "use client"
 
 import * as React from "react"
@@ -5,6 +10,25 @@ import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Scrollable area with custom scrollbar styling
+ * @component
+ * @param {Object} props - Component props
+ * @param {string} [props.className] - Additional CSS classes
+ * @param {React.ReactNode} props.children - Content to make scrollable
+ * @param {React.Ref} ref - Forwarded ref
+ * @returns {JSX.Element} Scrollable area container
+ * @example
+ * ```tsx
+ * <ScrollArea className="h-72 w-48 rounded-md border">
+ *   <div className="p-4">
+ *     {items.map((item) => (
+ *       <div key={item}>{item}</div>
+ *     ))}
+ *   </div>
+ * </ScrollArea>
+ * ```
+ */
 const ScrollArea = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
@@ -23,6 +47,15 @@ const ScrollArea = React.forwardRef<
 ))
 ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName
 
+/**
+ * Custom scrollbar component
+ * @component
+ * @param {Object} props - Component props
+ * @param {string} [props.className] - Additional CSS classes
+ * @param {"vertical" | "horizontal"} [props.orientation="vertical"] - Scrollbar orientation
+ * @param {React.Ref} ref - Forwarded ref
+ * @returns {JSX.Element} Styled scrollbar
+ */
 const ScrollBar = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>,
   React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>

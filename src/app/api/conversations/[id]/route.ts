@@ -1,16 +1,59 @@
+/**
+ * @fileoverview API endpoint to load conversation by ID
+ * @module app/api/conversations/[id]
+ */
+
 import { auth } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
 import { loadConversationFromDatabase } from '@/lib/conversation-manager'
 import { getOrCreateSearchSession } from '@/lib/search-tracking'
 import { createClient } from '@supabase/supabase-js'
 
+/** Force Node.js runtime for this route */
 export const runtime = 'nodejs'
 
+/** Supabase client with service role for full access */
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+/**
+ * Load conversation messages by ID
+ * @method GET
+ * @param {Request} request - Request object
+ * @param {Object} context - Route context
+ * @param {Promise<{id: string}>} context.params - Route parameters
+ * @returns {Promise<Response>} JSON response with conversation messages
+ * @response {Object} 200 - Success response
+ * @response {boolean} response.success - Success status
+ * @response {string} response.conversationId - Conversation ID
+ * @response {Array} response.messages - Conversation messages
+ * @response {number} response.count - Message count
+ * @response {Object} 500 - Server error
+ * @example
+ * // GET /api/conversations/abc123
+ * // Response:
+ * {
+ *   "success": true,
+ *   "conversationId": "abc123",
+ *   "messages": [
+ *     {
+ *       "id": "1",
+ *       "role": "user",
+ *       "content": "Busco agencias Toyota",
+ *       "timestamp": "2024-01-01T12:00:00Z"
+ *     },
+ *     {
+ *       "id": "2",
+ *       "role": "assistant",
+ *       "content": "He encontrado 5 agencias...",
+ *       "timestamp": "2024-01-01T12:00:05Z"
+ *     }
+ *   ],
+ *   "count": 2
+ * }
+ */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

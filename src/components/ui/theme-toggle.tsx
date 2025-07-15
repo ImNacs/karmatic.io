@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Theme toggle button for light/dark mode switching
+ * @module components/ui/theme-toggle
+ */
+
 "use client"
 
 import * as React from "react"
@@ -7,12 +12,16 @@ import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "motion/react"
 
 /**
- * ThemeToggle - Button to switch between light and dark themes
- * 
+ * Theme toggle button with animated transitions
  * @component
- * @description
- * Animated toggle button that switches between light and dark themes
- * with smooth transitions and icons.
+ * @returns {JSX.Element} Animated theme toggle button
+ * @example
+ * ```tsx
+ * // In a header or toolbar
+ * <nav>
+ *   <ThemeToggle />
+ * </nav>
+ * ```
  */
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()

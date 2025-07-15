@@ -1,32 +1,70 @@
+/**
+ * @fileoverview Search history context with optimistic updates
+ * @module contexts/SearchHistoryContext
+ */
+
 'use client'
 
 import React, { createContext, useContext, useState, useOptimistic, useCallback, startTransition } from 'react'
 import { nanoid } from 'nanoid'
 import useSWR from 'swr'
 
+/**
+ * Individual search history item
+ * @interface SearchItem
+ */
 interface SearchItem {
+  /** Unique search ID */
   id: string
+  /** Search location */
   location: string
+  /** Optional search query */
   query: string | null
+  /** ISO timestamp */
   createdAt: string
 }
 
+/**
+ * Grouped searches by time period
+ * @interface SearchGroup
+ */
 interface SearchGroup {
+  /** Group label (e.g., "Hoy", "Ayer") */
   label: string
+  /** Searches in this group */
   searches: SearchItem[]
 }
 
+/**
+ * Search history context value
+ * @interface SearchHistoryContextType
+ */
 interface SearchHistoryContextType {
+  /** Grouped search history */
   history: SearchGroup[]
+  /** Loading state */
   isLoading: boolean
+  /** Add search with optimistic update */
   addOptimisticSearch: (search: Omit<SearchItem, 'id' | 'createdAt'>) => string
+  /** Refresh history from server */
   refreshHistory: () => Promise<void>
+  /** Update temporary ID with real ID */
   updateSearchId: (tempId: string, realId: string) => void
+  /** Delete search from history */
   deleteSearch: (searchId: string) => Promise<void>
 }
 
 const SearchHistoryContext = createContext<SearchHistoryContextType | undefined>(undefined)
 
+/**
+ * Hook to access search history context
+ * @returns {SearchHistoryContextType} Search history context value
+ * @throws {Error} If used outside SearchHistoryProvider
+ * @example
+ * ```tsx
+ * const { history, addOptimisticSearch, deleteSearch } = useSearchHistory();
+ * ```
+ */
 export function useSearchHistory() {
   const context = useContext(SearchHistoryContext)
   if (!context) {
@@ -35,6 +73,12 @@ export function useSearchHistory() {
   return context
 }
 
+/**
+ * Insert search at the top of history maintaining group structure
+ * @param {SearchGroup[]} history - Current history groups
+ * @param {SearchItem} newSearch - New search to insert
+ * @returns {SearchGroup[]} Updated history with search inserted
+ */
 function insertSearchAtTop(history: SearchGroup[], newSearch: SearchItem): SearchGroup[] {
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -62,7 +106,11 @@ function insertSearchAtTop(history: SearchGroup[], newSearch: SearchItem): Searc
   return updatedHistory
 }
 
-// Fetcher for SWR
+/**
+ * SWR fetcher for search history API
+ * @param {string} url - API endpoint URL
+ * @returns {Promise<SearchGroup[]>} Search history groups
+ */
 const fetcher = async (url: string) => {
   try {
     const res = await fetch(url, {
@@ -81,6 +129,19 @@ const fetcher = async (url: string) => {
   }
 }
 
+/**
+ * Search history provider with SWR caching and optimistic updates
+ * @component
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Child components
+ * @returns {JSX.Element} Provider component
+ * @example
+ * ```tsx
+ * <SearchHistoryProvider>
+ *   <App />
+ * </SearchHistoryProvider>
+ * ```
+ */
 export function SearchHistoryProvider({ children }: { children: React.ReactNode }) {
   // Use SWR for efficient caching and automatic revalidation
   const { data: history = [], isLoading, mutate } = useSWR<SearchGroup[]>(

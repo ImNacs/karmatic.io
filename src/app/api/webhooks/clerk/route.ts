@@ -1,8 +1,41 @@
+/**
+ * @fileoverview Clerk webhook handler for user lifecycle events
+ * @module app/api/webhooks/clerk
+ */
+
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * Handle Clerk webhook events for user synchronization
+ * @method POST
+ * @param {Request} req - Webhook request from Clerk
+ * @returns {Promise<Response>} Webhook processing response
+ * @webhook {string} header.svix-id - Svix ID header
+ * @webhook {string} header.svix-timestamp - Svix timestamp header
+ * @webhook {string} header.svix-signature - Svix signature header
+ * @response {string} 200 - Webhook processed successfully
+ * @response {string} 400 - Invalid headers or verification failed
+ * @response {string} 500 - Processing error
+ * @handles user.created - Create user in database
+ * @handles user.updated - Update user in database
+ * @handles user.deleted - Remove user from database
+ * @example
+ * // Webhook payload for user.created
+ * {
+ *   "type": "user.created",
+ *   "data": {
+ *     "id": "user_abc123",
+ *     "email_addresses": [{
+ *       "email_address": "user@example.com"
+ *     }],
+ *     "first_name": "John",
+ *     "last_name": "Doe"
+ *   }
+ * }
+ */
 export async function POST(req: Request) {
   // Get the headers
   const headerPayload = await headers();

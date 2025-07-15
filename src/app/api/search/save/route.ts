@@ -1,7 +1,47 @@
+/**
+ * @fileoverview API endpoint to save user search history
+ * @module app/api/search/save
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { saveSearchHistory, getOrCreateSearchSession } from '@/lib/search-tracking'
 
+/**
+ * Save search history to database
+ * @method POST
+ * @param {NextRequest} request - Request object
+ * @returns {Promise<NextResponse>} JSON response with search ID
+ * @body {Object} Search data
+ * @body {string} body.location - Search location (required)
+ * @body {string} [body.query] - Search query
+ * @body {string} [body.placeId] - Google Place ID
+ * @body {Object} [body.coordinates] - Location coordinates
+ * @body {number} body.coordinates.lat - Latitude
+ * @body {number} body.coordinates.lng - Longitude
+ * @body {Array} [body.results] - Search results
+ * @response {Object} 200 - Success response
+ * @response {string} response.searchId - Saved search ID
+ * @response {boolean} response.success - Success status
+ * @response {Object} 400 - Bad request
+ * @response {Object} 429 - Rate limit exceeded
+ * @response {Object} 500 - Server error
+ * @example
+ * // Request body
+ * {
+ *   "location": "Ciudad de México",
+ *   "query": "Toyota",
+ *   "placeId": "ChIJU1NoiDs6BIQREZgJa760ZO0",
+ *   "coordinates": { "lat": 19.4326, "lng": -99.1332 },
+ *   "results": [{...}]
+ * }
+ * 
+ * // Success response
+ * {
+ *   "searchId": "abc123",
+ *   "success": true
+ * }
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()

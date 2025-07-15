@@ -1,5 +1,10 @@
 'use client'
 
+/**
+ * @fileoverview AI Assistant chat panel component for desktop view
+ * @module components/features/ai-assistant/panels/ChatPanel
+ */
+
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Send, Sparkles, User, Bot, Loader2 } from 'lucide-react'
@@ -7,6 +12,23 @@ import { cn } from '@/lib/utils'
 import { useAIAssistant } from '@/contexts/AIAssistantContext'
 import { Input } from '@/components/ui/input'
 
+/**
+ * Desktop chat panel for AI assistant interactions
+ * @component
+ * @description
+ * Provides a full-featured chat interface for desktop users with:
+ * - Message history display
+ * - Real-time typing indicators
+ * - Smooth animations and auto-scrolling
+ * - Context-aware responses based on current search
+ * 
+ * @example
+ * ```tsx
+ * <ChatPanel />
+ * ```
+ * 
+ * @returns {JSX.Element} Rendered chat panel
+ */
 export function ChatPanel() {
   const {
     messages,

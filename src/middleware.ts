@@ -1,7 +1,15 @@
+/**
+ * @fileoverview Next.js middleware for authentication and route protection
+ * @module middleware
+ */
+
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-// Define which routes should be protected
+/**
+ * Routes that require authentication
+ * @constant
+ */
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
   '/admin(.*)',
@@ -10,14 +18,20 @@ const isProtectedRoute = createRouteMatcher([
   '/settings(.*)',
 ]);
 
-// Define public API routes that should not require authentication
+/**
+ * Public API routes accessible without authentication
+ * @constant
+ */
 const isPublicApiRoute = createRouteMatcher([
   '/api/webhook(.*)',
   '/api/public(.*)',
   '/api/search(.*)',
 ]);
 
-// Define public page routes
+/**
+ * Public page routes accessible without authentication
+ * @constant
+ */
 const isPublicRoute = createRouteMatcher([
   '/',
   '/explorer',
@@ -26,13 +40,22 @@ const isPublicRoute = createRouteMatcher([
   '/contact',
 ]);
 
-// Define auth routes
+/**
+ * Authentication-related routes (sign-in, sign-up)
+ * @constant
+ */
 const isAuthRoute = createRouteMatcher([
   '/auth/(.*)',
   '/sign-in(.*)',
   '/sign-up(.*)',
 ]);
 
+/**
+ * Main middleware function handling authentication and route protection
+ * @param {Function} auth - Clerk auth function
+ * @param {NextRequest} req - Next.js request object
+ * @returns {NextResponse} Response with appropriate redirects or next()
+ */
 export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
   const { pathname } = req.nextUrl;
@@ -59,6 +82,10 @@ export default clerkMiddleware(async (auth, req) => {
   return NextResponse.next();
 });
 
+/**
+ * Middleware configuration
+ * @description Defines which routes trigger the middleware
+ */
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params

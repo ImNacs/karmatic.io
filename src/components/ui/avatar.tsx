@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Avatar component for user profile images
+ * @module components/ui/avatar
+ */
+
 "use client"
 
 import * as React from "react"
@@ -5,6 +10,20 @@ import * as AvatarPrimitive from "@radix-ui/react-avatar"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Avatar container component
+ * @component
+ * @param {Object} props - Component props
+ * @param {string} [props.className] - Additional CSS classes
+ * @returns {JSX.Element} Avatar container
+ * @example
+ * ```tsx
+ * <Avatar>
+ *   <AvatarImage src="/avatar.jpg" alt="User" />
+ *   <AvatarFallback>JD</AvatarFallback>
+ * </Avatar>
+ * ```
+ */
 function Avatar({
   className,
   ...props
@@ -21,6 +40,15 @@ function Avatar({
   )
 }
 
+/**
+ * Avatar image component with automatic loading state
+ * @component
+ * @param {Object} props - Component props
+ * @param {string} [props.className] - Additional CSS classes
+ * @param {string} props.src - Image source URL
+ * @param {string} props.alt - Alternative text for accessibility
+ * @returns {JSX.Element} Avatar image element
+ */
 function AvatarImage({
   className,
   ...props
@@ -34,6 +62,14 @@ function AvatarImage({
   )
 }
 
+/**
+ * Avatar fallback content when image fails to load
+ * @component
+ * @param {Object} props - Component props
+ * @param {string} [props.className] - Additional CSS classes
+ * @param {React.ReactNode} props.children - Fallback content (usually initials)
+ * @returns {JSX.Element} Avatar fallback element
+ */
 function AvatarFallback({
   className,
   ...props

@@ -1,10 +1,41 @@
+/**
+ * @fileoverview Manual user sync endpoint for Clerk-Prisma integration
+ * @module app/api/auth/sync-user
+ */
+
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { serializeBigInt } from '@/lib/bigint-serializer';
-
-// Manual user sync endpoint for development
-// Call this after login to ensure user exists in database
+/**
+ * Sync authenticated Clerk user to Prisma database
+ * @method POST
+ * @returns {Promise<NextResponse>} JSON response with sync status
+ * @response {Object} 200 - Success response
+ * @response {string} response.message - Status message
+ * @response {Object} response.user - Synced user data
+ * @response {string} response.user.id - Database user ID
+ * @response {string} response.user.clerkUserId - Clerk user ID
+ * @response {string} response.user.email - User email
+ * @response {string} response.user.firstName - First name
+ * @response {string} response.user.lastName - Last name
+ * @response {Object} 401 - Not authenticated
+ * @response {Object} 400 - Bad request
+ * @response {Object} 500 - Server error
+ * @example
+ * // POST /api/auth/sync-user
+ * // Response:
+ * {
+ *   "message": "User synced successfully",
+ *   "user": {
+ *     "id": "1",
+ *     "clerkUserId": "user_abc123",
+ *     "email": "user@example.com",
+ *     "firstName": "John",
+ *     "lastName": "Doe"
+ *   }
+ * }
+ */
 export async function POST() {
   try {
     const { userId: clerkUserId } = await auth();

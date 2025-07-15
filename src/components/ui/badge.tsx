@@ -1,9 +1,18 @@
+/**
+ * @fileoverview Badge component for displaying status or labels
+ * @module components/ui/badge
+ */
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Badge variant styles using class-variance-authority
+ * @constant
+ */
 const badgeVariants = cva(
   "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
   {
@@ -25,6 +34,29 @@ const badgeVariants = cva(
   }
 )
 
+/**
+ * Badge component for displaying labels, status, or counts
+ * @component
+ * @param {Object} props - Component props
+ * @param {string} [props.className] - Additional CSS classes
+ * @param {"default" | "secondary" | "destructive" | "outline"} [props.variant="default"] - Badge style variant
+ * @param {boolean} [props.asChild=false] - Render as Slot for composition
+ * @returns {JSX.Element} Badge element
+ * @example
+ * ```tsx
+ * // Status badge
+ * <Badge variant="secondary">Active</Badge>
+ * 
+ * // Count badge
+ * <Badge variant="destructive">99+</Badge>
+ * 
+ * // With icon
+ * <Badge>
+ *   <CheckIcon className="w-3 h-3" />
+ *   Complete
+ * </Badge>
+ * ```
+ */
 function Badge({
   className,
   variant,

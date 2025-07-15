@@ -1,7 +1,29 @@
+/**
+ * @fileoverview Input component with multiple variants
+ * @module components/ui/input
+ */
+
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Input component with default and search variants
+ * @component
+ * @param {Object} props - Component props
+ * @param {string} [props.className] - Additional CSS classes
+ * @param {string} [props.type] - Input type attribute
+ * @param {"default" | "search"} [props.variant="default"] - Input style variant
+ * @returns {JSX.Element} Input element
+ * @example
+ * ```tsx
+ * // Default form input
+ * <Input type="text" placeholder="Enter text" />
+ * 
+ * // Search style input
+ * <Input variant="search" placeholder="Search..." />
+ * ```
+ */
 function Input({ className, type, variant = "default", ...props }: React.ComponentProps<"input"> & { variant?: "default" | "search" }) {
   return (
     <input

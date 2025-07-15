@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Root layout component for the Karmatic application
+ * @module app/layout
+ */
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -11,16 +16,28 @@ import { GTMScript, GTMNoScript } from "@/lib/gtm/gtm";
 import { SearchHistoryProvider } from "@/contexts/SearchHistoryContext";
 import { VerticalSidebar } from "@/components/features/sidebar";
 
+/**
+ * Geist Sans font configuration
+ * @constant
+ */
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
+/**
+ * Geist Mono font configuration
+ * @constant
+ */
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
+/**
+ * Application metadata for SEO and social sharing
+ * @constant
+ */
 export const metadata: Metadata = {
   title: "Karmatic - Análisis de Agencias Automotrices",
   description: "Explora, analiza y selecciona las mejores agencias automotrices cerca de ti",
@@ -67,6 +84,13 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
+/**
+ * Root layout component wrapping all pages
+ * @component
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Child pages/components
+ * @returns {JSX.Element} Application layout with providers
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

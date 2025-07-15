@@ -1,10 +1,15 @@
+/**
+ * @fileoverview AI chat API endpoint for conversational interactions
+ * @module app/api/ai/chat
+ */
+
 import { auth } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
 import { mastra } from '@/mastra'
 import { saveMessage, getOrCreateSearchSession } from '@/lib/search-tracking'
 import { createClient } from '@supabase/supabase-js'
 
-// Use nodejs runtime instead of edge due to Mastra dependencies
+/** Use nodejs runtime instead of edge due to Mastra dependencies */
 export const runtime = 'nodejs'
 
 const supabase = createClient(
@@ -12,33 +17,66 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+/**
+ * Chat message structure
+ * @interface ChatMessage
+ */
 interface ChatMessage {
+  /** Optional message ID */
   id?: string
+  /** Message sender role */
   role: 'user' | 'assistant' | 'system'
+  /** Message content */
   content: string
+  /** Optional timestamp */
   timestamp?: Date
 }
 
+/**
+ * Chat API request payload
+ * @interface ChatRequest
+ */
 interface ChatRequest {
+  /** Conversation history */
   messages: ChatMessage[]
+  /** Search/conversation ID for context */
   searchId?: string
+  /** Additional context for the AI */
   context?: {
+    /** Search query */
     query?: string
+    /** Location text */
     location?: string
+    /** Google Place ID */
     placeId?: string
+    /** Structured place details */
     placeDetails?: {
+      /** Full description */
       description: string
+      /** Primary text */
       mainText: string
+      /** Secondary text */
       secondaryText: string
     }
+    /** Geographic coordinates */
     coordinates?: {
+      /** Latitude */
       lat: number
+      /** Longitude */
       lng: number
     }
+    /** Additional context properties */
     [key: string]: any
   }
 }
 
+/**
+ * Handle chat requests with AI agent
+ * @async
+ * @param {Request} request - HTTP request with chat messages
+ * @returns {Response} Streaming response with AI completion
+ * @throws {Error} Returns 401 for rate limits, 500 for server errors
+ */
 export async function POST(request: Request) {
   try {
     console.log('🚀 Chat API: Request received')

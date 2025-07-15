@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Dialog/Modal component family
+ * @module components/ui/dialog
+ */
+
 "use client"
 
 import * as React from "react"
@@ -6,6 +11,24 @@ import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Dialog root component
+ * @component
+ * @param {Object} props - Component props
+ * @returns {JSX.Element} Dialog root
+ * @example
+ * ```tsx
+ * <Dialog>
+ *   <DialogTrigger>Open</DialogTrigger>
+ *   <DialogContent>
+ *     <DialogHeader>
+ *       <DialogTitle>Title</DialogTitle>
+ *       <DialogDescription>Description</DialogDescription>
+ *     </DialogHeader>
+ *   </DialogContent>
+ * </Dialog>
+ * ```
+ */
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -46,6 +69,15 @@ function DialogOverlay({
   )
 }
 
+/**
+ * Dialog content container with overlay
+ * @component
+ * @param {Object} props - Component props
+ * @param {string} [props.className] - Additional CSS classes
+ * @param {React.ReactNode} props.children - Dialog content
+ * @param {boolean} [props.showCloseButton=true] - Show close button
+ * @returns {JSX.Element} Dialog content
+ */
 function DialogContent({
   className,
   children,

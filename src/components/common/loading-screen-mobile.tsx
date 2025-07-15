@@ -1,14 +1,47 @@
+/**
+ * @fileoverview Mobile-optimized loading screen component
+ * @module components/common/loading-screen-mobile
+ */
+
 "use client"
 
 import { motion } from "motion/react"
 import { FiMap, FiMessageSquare } from "react-icons/fi"
 
+/**
+ * Props for LoadingScreenMobile component
+ * @interface LoadingScreenMobileProps
+ */
 interface LoadingScreenMobileProps {
+  /** Loading type determines icon display */
   type?: "search" | "analysis"
+  /** Main loading message */
   title?: string
+  /** Optional subtitle for additional context */
   subtitle?: string
 }
 
+/**
+ * Full-screen loading component optimized for mobile devices
+ * @component
+ * @param {LoadingScreenMobileProps} props - Component props
+ * @returns {JSX.Element} Animated loading screen
+ * @example
+ * ```tsx
+ * // Search loading
+ * <LoadingScreenMobile 
+ *   type="search" 
+ *   title="Buscando agencias" 
+ *   subtitle="Esto puede tomar unos segundos"
+ * />
+ * 
+ * // Analysis loading
+ * <LoadingScreenMobile 
+ *   type="analysis" 
+ *   title="Analizando datos"
+ * />
+ * ```
+ */
 export function LoadingScreenMobile({
   type = "search",
   title = "Cargando...",

@@ -1,34 +1,66 @@
 'use client'
 
+/**
+ * @fileoverview AI Assistant context provider for managing chat state
+ * @module contexts/AIAssistantContext
+ */
+
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSearchHistory } from '@/contexts/SearchHistoryContext'
 
+/** Available panel types for the AI assistant */
 export type PanelType = 'chat' | 'none'
 
+/**
+ * Chat message structure
+ * @interface ChatMessage
+ */
 interface ChatMessage {
+  /** Unique message identifier */
   id: string
+  /** Message sender role */
   role: 'user' | 'assistant' | 'system'
+  /** Message content */
   content: string
+  /** Message timestamp */
   timestamp: Date
+  /** Optional metadata for rich content */
   metadata?: {
+    /** Dealer-specific data */
     dealerData?: any
+    /** Calculation results */
     calculations?: any
   }
-  // Backward compatibility
+  /** Legacy type field for backward compatibility */
   type?: 'user' | 'assistant'
 }
 
+/**
+ * AI-generated insight about agencies
+ * @interface AIInsight
+ */
 interface AIInsight {
+  /** Unique insight identifier */
   id: string
+  /** Type of insight */
   type: 'inventory' | 'pricing' | 'review' | 'recommendation'
+  /** Insight title */
   title: string
+  /** Detailed content */
   content: string
+  /** Confidence score (0-1) */
   confidence: number
+  /** Related dealer ID */
   dealerId?: string
+  /** Creation timestamp */
   timestamp: Date
 }
 
+/**
+ * AI Assistant context state and actions
+ * @interface AIAssistantContextType
+ */
 interface AIAssistantContextType {
   // UI State
   isOpen: boolean
@@ -67,6 +99,15 @@ interface AIAssistantContextType {
 
 const AIAssistantContext = createContext<AIAssistantContextType | null>(null)
 
+/**
+ * Hook to access AI Assistant context
+ * @returns {AIAssistantContextType} AI Assistant state and actions
+ * @throws {Error} If used outside of AIAssistantProvider
+ * @example
+ * ```tsx
+ * const { messages, sendMessage, isTyping } = useAIAssistant();
+ * ```
+ */
 export function useAIAssistant() {
   const context = useContext(AIAssistantContext)
   if (!context) {
@@ -75,6 +116,19 @@ export function useAIAssistant() {
   return context
 }
 
+/**
+ * AI Assistant context provider component
+ * @component
+ * @param {Object} props - Component props
+ * @param {ReactNode} props.children - Child components
+ * @returns {JSX.Element} Provider component
+ * @example
+ * ```tsx
+ * <AIAssistantProvider>
+ *   <App />
+ * </AIAssistantProvider>
+ * ```
+ */
 export function AIAssistantProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { history } = useSearchHistory()

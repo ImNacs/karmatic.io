@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Supabase vector search and conversation utilities
+ * @module lib/supabase-vector
+ */
+
 import { createClient } from '@supabase/supabase-js';
 import type { 
   DocumentMetadata, 
@@ -6,14 +11,25 @@ import type {
   ConversationMessage 
 } from '@/types/supabase';
 
-// Initialize Supabase client for vector operations
+/** Supabase URL from environment */
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+/** Supabase anonymous key from environment */
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+/** Supabase client instance for vector operations */
 export const supabaseVector = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
  * Perform hybrid search combining semantic and full-text search
+ * @param {Object} params - Search parameters
+ * @param {string} params.queryText - Text query for full-text search
+ * @param {number[]} [params.queryEmbedding] - Vector embedding for semantic search
+ * @param {number} [params.matchCount=10] - Number of results to return
+ * @param {number} [params.fullTextWeight=1] - Weight for full-text search
+ * @param {number} [params.semanticWeight=1] - Weight for semantic search
+ * @param {Partial<DocumentMetadata>} [params.filterMetadata={}] - Metadata filters
+ * @returns {Promise<HybridSearchResult[]>} Search results
+ * @throws {Error} If search fails
  */
 export async function hybridSearch({
   queryText,
@@ -49,6 +65,10 @@ export async function hybridSearch({
 
 /**
  * Get user's conversation list
+ * @param {string} userId - User ID
+ * @param {number} [limit=20] - Maximum conversations to return
+ * @returns {Promise<ConversationSummary[]>} List of conversation summaries
+ * @throws {Error} If fetch fails
  */
 export async function getUserConversations(
   userId: string,
@@ -69,6 +89,10 @@ export async function getUserConversations(
 
 /**
  * Get messages from a specific conversation
+ * @param {string} conversationId - Conversation ID
+ * @param {number} [limit=50] - Maximum messages to return
+ * @returns {Promise<ConversationMessage[]>} List of conversation messages
+ * @throws {Error} If fetch fails
  */
 export async function getConversationMessages(
   conversationId: string,
@@ -89,6 +113,14 @@ export async function getConversationMessages(
 
 /**
  * Search for agency-related documents
+ * @param {string} location - Location to search
+ * @param {string} [query] - Additional search query
+ * @param {number} [limit=10] - Maximum results to return
+ * @returns {Promise<HybridSearchResult[]>} Agency search results
+ * @example
+ * ```ts
+ * const results = await searchAgencyDocuments('Ciudad de México', 'Toyota');
+ * ```
  */
 export async function searchAgencyDocuments(
   location: string,
@@ -109,6 +141,10 @@ export async function searchAgencyDocuments(
 
 /**
  * Check if a conversation exists for a search
+ * @param {string} userId - User ID
+ * @param {string} location - Search location
+ * @param {string} [query] - Search query
+ * @returns {Promise<string | null>} Conversation ID if found, null otherwise
  */
 export async function findConversationBySearch(
   userId: string,

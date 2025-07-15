@@ -1,13 +1,35 @@
+/**
+ * @fileoverview Google Places API integration hook
+ * @module lib/google-places
+ */
+
 import { useMemo, useCallback, useRef } from "react";
 import { useGoogleMaps } from "@/providers/google-maps-provider";
 
-// Google Places API configuration
+/** Google Maps API key from environment */
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-// Always use new API - old one was deprecated March 2025
+/** Flag to use new Autocomplete API (legacy deprecated March 2025) */
 const USE_NEW_AUTOCOMPLETE_API = true;
 
-// Custom hook for Google Places Autocomplete
+/**
+ * Custom hook for Google Places Autocomplete functionality
+ * @returns {Object} Google Places utilities and state
+ * @returns {boolean} isLoaded - Whether Google Maps API is loaded
+ * @returns {Function} getPlacePredictions - Get autocomplete predictions
+ * @returns {Function} getPlaceDetails - Get detailed place information
+ * @returns {Function} resetSessionToken - Reset session token after selection
+ * @example
+ * ```tsx
+ * const { isLoaded, getPlacePredictions, getPlaceDetails } = useGooglePlaces();
+ * 
+ * // Get predictions
+ * const predictions = await getPlacePredictions("Roma Norte");
+ * 
+ * // Get place details
+ * const details = await getPlaceDetails(predictions[0].place_id);
+ * ```
+ */
 export function useGooglePlaces() {
   const { isLoaded: googleMapsLoaded } = useGoogleMaps();
   const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
@@ -20,7 +42,11 @@ export function useGooglePlaces() {
            window.google.maps.places;
   }, [googleMapsLoaded]);
 
-  // Create or get current session token
+  /**
+   * Get or create a session token for billing optimization
+   * @private
+   * @returns {google.maps.places.AutocompleteSessionToken | null} Session token
+   */
   const getSessionToken = useCallback(() => {
     if (!isLoaded) return null;
     if (!sessionTokenRef.current) {
@@ -29,7 +55,11 @@ export function useGooglePlaces() {
     return sessionTokenRef.current;
   }, [isLoaded]);
 
-  // Reset session token (call after place selection)
+  /**
+   * Reset session token after place selection
+   * Should be called after user selects a place to optimize billing
+   * @public
+   */
   const resetSessionToken = useCallback(() => {
     sessionTokenRef.current = null;
   }, []);
@@ -44,7 +74,12 @@ export function useGooglePlaces() {
     return new window.google.maps.places.PlacesService(map);
   };
 
-  // Transform new API response to match legacy format
+  /**
+   * Transform new AutocompleteSuggestion API response to legacy format
+   * @private
+   * @param {google.maps.places.AutocompleteSuggestion} suggestion - New API suggestion
+   * @returns {PlacePrediction} Transformed prediction in legacy format
+   */
   const transformSuggestion = useCallback((
     suggestion: google.maps.places.AutocompleteSuggestion
   ): PlacePrediction => {
@@ -68,7 +103,14 @@ export function useGooglePlaces() {
     };
   }, []);
 
-  // Legacy AutocompleteService implementation
+  /**
+   * Get place predictions using legacy AutocompleteService
+   * @private
+   * @param {string} input - Search input text
+   * @param {Partial<google.maps.places.AutocompletionRequest>} options - Additional options
+   * @returns {Promise<PlacePrediction[]>} Array of place predictions
+   * @throws {Error} If Google Places service is not available
+   */
   const getPlacePredictionsLegacy = useCallback((
     input: string,
     options: Partial<google.maps.places.AutocompletionRequest> = {}
@@ -104,7 +146,14 @@ export function useGooglePlaces() {
     });
   }, [createAutocompleteService]);
 
-  // New AutocompleteSuggestion implementation
+  /**
+   * Get place predictions using new AutocompleteSuggestion API
+   * @private
+   * @param {string} input - Search input text
+   * @param {Object} options - Additional options for the API
+   * @returns {Promise<PlacePrediction[]>} Array of place predictions
+   * @throws {Error} If Google Places service is not available
+   */
   const getPlacePredictionsNew = useCallback(async (
     input: string,
     options: any = {}
@@ -161,7 +210,14 @@ export function useGooglePlaces() {
     }
   }, [isLoaded, getSessionToken, transformSuggestion, getPlacePredictionsLegacy]);
 
-  // Main function that routes to new or legacy API
+  /**
+   * Get place predictions with automatic API selection
+   * Automatically uses new API if available, falls back to legacy
+   * @public
+   * @param {string} input - Search input text
+   * @param {Partial<google.maps.places.AutocompletionRequest>} options - Additional options
+   * @returns {Promise<PlacePrediction[]>} Array of place predictions
+   */
   const getPlacePredictions = useCallback((
     input: string,
     options: Partial<google.maps.places.AutocompletionRequest> = {}
@@ -186,6 +242,13 @@ export function useGooglePlaces() {
     return getPlacePredictionsLegacy(input, options);
   }, [isLoaded, getPlacePredictionsNew, getPlacePredictionsLegacy]);
 
+  /**
+   * Get detailed information about a specific place
+   * @public
+   * @param {string} placeId - Google Place ID
+   * @returns {Promise<google.maps.places.PlaceResult>} Detailed place information
+   * @throws {Error} If place details cannot be retrieved
+   */
   const getPlaceDetails = useCallback((
     placeId: string
   ): Promise<google.maps.places.PlaceResult> => {
@@ -225,33 +288,59 @@ export function useGooglePlaces() {
   };
 }
 
-// Google Places types for TypeScript
+/**
+ * Google Places prediction result
+ * @interface PlacePrediction
+ */
 export interface PlacePrediction {
+  /** Google Place ID */
   place_id: string;
+  /** Full formatted place description */
   description: string;
+  /** Structured formatting for display */
   structured_formatting: {
+    /** Primary text (usually place name) */
     main_text: string;
+    /** Secondary text (usually address) */
     secondary_text: string;
   };
+  /** Parsed terms from the prediction */
   terms: Array<{
+    /** Character offset in description */
     offset: number;
+    /** Term value */
     value: string;
   }>;
 }
 
+/**
+ * Detailed place information from Google Places
+ * @interface PlaceDetails
+ */
 export interface PlaceDetails {
+  /** Google Place ID */
   place_id: string;
+  /** Place name */
   name: string;
+  /** Full formatted address */
   formatted_address: string;
+  /** Geographic information */
   geometry: {
+    /** Coordinates */
     location: {
+      /** Latitude */
       lat: number;
+      /** Longitude */
       lng: number;
     };
   };
+  /** Parsed address components */
   address_components: Array<{
+    /** Full name of the component */
     long_name: string;
+    /** Abbreviated name */
     short_name: string;
+    /** Component types (e.g., 'locality', 'country') */
     types: string[];
   }>;
 }

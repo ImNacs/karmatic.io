@@ -1,13 +1,48 @@
+/**
+ * @fileoverview Custom hook for managing Google Maps interactions
+ * @module hooks/use-map-interactions
+ */
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { debounce, throttle, smoothPanTo } from '@/lib/map-utils'
 
+/**
+ * Props for useMapInteractions hook
+ * @interface UseMapInteractionsProps
+ */
 interface UseMapInteractionsProps {
+  /** Google Maps instance */
   map: google.maps.Map | null
+  /** Callback when map bounds change */
   onBoundsChange?: (bounds: google.maps.LatLngBounds) => void
+  /** Callback when map zoom changes */
   onZoomChange?: (zoom: number) => void
+  /** Callback when map center changes */
   onCenterChange?: (center: google.maps.LatLng) => void
 }
 
+/**
+ * Hook for managing Google Maps interactions with performance optimizations
+ * @param {UseMapInteractionsProps} props - Hook configuration
+ * @returns {Object} Map interaction utilities
+ * @returns {boolean} returns.isInteracting - Whether user is currently interacting with map
+ * @returns {number} returns.currentZoom - Current map zoom level
+ * @returns {google.maps.LatLngBounds | null} returns.currentBounds - Current map bounds
+ * @returns {Function} returns.panTo - Smoothly pan to location
+ * @returns {Function} returns.panWithOffset - Pan with pixel offset
+ * @returns {Function} returns.fitBoundsAnimated - Animated bounds fitting
+ * @example
+ * ```tsx
+ * const {
+ *   isInteracting,
+ *   panTo,
+ *   fitBoundsAnimated
+ * } = useMapInteractions({
+ *   map,
+ *   onBoundsChange: (bounds) => loadAgenciesInBounds(bounds)
+ * });
+ * ```
+ */
 export function useMapInteractions({
   map,
   onBoundsChange,
@@ -45,7 +80,11 @@ export function useMapInteractions({
     return handler()
   }, [map, onZoomChange])
 
-  // Smooth pan to location
+  /**
+   * Smoothly pan map to specified location
+   * @param {google.maps.LatLng | google.maps.LatLngLiteral} location - Target location
+   * @param {number} [duration] - Animation duration in milliseconds
+   */
   const panTo = useCallback((location: google.maps.LatLng | google.maps.LatLngLiteral, duration?: number) => {
     if (!map) return
     
@@ -56,7 +95,12 @@ export function useMapInteractions({
     smoothPanTo(map, latLng, duration)
   }, [map])
 
-  // Pan with offset (useful for showing markers with UI overlays)
+  /**
+   * Pan to location with pixel offset (useful for UI overlays)
+   * @param {google.maps.LatLng | google.maps.LatLngLiteral} location - Target location
+   * @param {number} [offsetX=0] - Horizontal offset in pixels
+   * @param {number} [offsetY=0] - Vertical offset in pixels
+   */
   const panWithOffset = useCallback((
     location: google.maps.LatLng | google.maps.LatLngLiteral,
     offsetX: number = 0,
@@ -83,7 +127,12 @@ export function useMapInteractions({
     }
   }, [map])
 
-  // Fit bounds with animation
+  /**
+   * Fit map bounds with smooth animation
+   * @param {google.maps.LatLngBounds} bounds - Bounds to fit
+   * @param {google.maps.Padding | number} [padding] - Padding around bounds
+   * @returns {Function} Cleanup function to remove event listener
+   */
   const fitBoundsAnimated = useCallback((
     bounds: google.maps.LatLngBounds,
     padding?: google.maps.Padding | number

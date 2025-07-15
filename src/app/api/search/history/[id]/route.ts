@@ -32,7 +32,7 @@ export async function DELETE(
     // Call the SQL function to soft delete
     const { data: success, error } = await supabase.rpc('delete_search_history', {
       p_conversation_id: id, // id is the conversationId in the new system
-      p_user_id: dbUserId,
+      p_user_id: dbUserId ? parseInt(dbUserId.toString()) : null,
       p_session_id: !dbUserId ? sessionId : null
     })
     

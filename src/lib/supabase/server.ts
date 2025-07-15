@@ -1,7 +1,24 @@
+/**
+ * @fileoverview Supabase server clients for Next.js server components
+ * @module lib/supabase/server
+ */
+
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { auth } from '@clerk/nextjs/server';
 
+/**
+ * Create authenticated Supabase client for server components
+ * @returns {Promise<SupabaseClient>} Authenticated Supabase client
+ * @example
+ * ```ts
+ * // In a server component or API route
+ * const supabase = await createClient();
+ * const { data, error } = await supabase
+ *   .from('users')
+ *   .select('*');
+ * ```
+ */
 export async function createClient() {
   const cookieStore = await cookies();
   const { getToken } = await auth();
@@ -50,7 +67,20 @@ export async function createClient() {
   );
 }
 
-// Service role client for admin operations (use with caution!)
+/**
+ * Create Supabase client with service role (full admin access)
+ * @returns {SupabaseClient} Service role Supabase client
+ * @warning Use with extreme caution - bypasses all RLS policies
+ * @example
+ * ```ts
+ * // Only use for admin operations that need to bypass RLS
+ * const supabase = createServiceClient();
+ * const { data, error } = await supabase
+ *   .from('users')
+ *   .delete()
+ *   .eq('id', userId);
+ * ```
+ */
 export function createServiceClient() {
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
