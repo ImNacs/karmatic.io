@@ -51,7 +51,7 @@ export function LocationAutocomplete({
   const [selectedIndex, setSelectedIndex] = useState(-1)
   
   const inputRef = useRef<HTMLInputElement>(null)
-  const { isLoaded, getPlacePredictions, resetSessionToken } = useGooglePlaces()
+  const { isLoaded, getPlacePredictions, getPlaceDetails, resetSessionToken } = useGooglePlaces()
 
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
   const blurTimeout = useRef<NodeJS.Timeout | null>(null)
@@ -120,6 +120,10 @@ export function LocationAutocomplete({
     const newValue = e.target.value
     onChange(newValue)
     setSelectedIndex(-1)
+    // Reset selected place when user types
+    if (onPlaceSelect) {
+      onPlaceSelect(null as any)
+    }
   }
 
   const handlePredictionClick = (prediction: PlacePrediction) => {
@@ -278,6 +282,14 @@ export function LocationAutocomplete({
     wasSelectedRef.current = false // Reset selection ref
     resetSessionToken() // Reset Google Places session token
     
+    // Clear selected place and coordinates
+    if (onPlaceSelect) {
+      onPlaceSelect(null as any)
+    }
+    if (onLocationSelect) {
+      onLocationSelect(null as any)
+    }
+    
     // Clear any pending debounce timers
     if (debounceTimeout.current) {
       clearTimeout(debounceTimeout.current)
@@ -306,8 +318,9 @@ export function LocationAutocomplete({
             blurTimeout.current = setTimeout(() => setShowPredictions(false), 200)
           }}
           placeholder={placeholder}
-          className="pl-10 pr-20 h-12 text-base"
+          className="pl-10 pr-20"
           disabled={disabled}
+          variant="search"
         />
         
         <div className="absolute right-1 top-1 flex items-center space-x-1">

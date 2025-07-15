@@ -155,7 +155,7 @@ function SearchHistoryComponent({ className }: SearchHistoryProps) {
                 placeholder="Buscar en el historial..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-sm"
+                className="pl-9"
               />
             </div>
           )}

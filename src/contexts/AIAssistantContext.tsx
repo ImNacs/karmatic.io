@@ -412,7 +412,10 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
           searchId: currentSearchId,
           context: searchContext?.currentSearch ? {
             location: searchContext.currentSearch.location,
-            query: searchContext.currentSearch.query
+            query: searchContext.currentSearch.query,
+            placeId: searchContext.currentSearch.placeId,
+            placeDetails: searchContext.currentSearch.placeDetails,
+            coordinates: searchContext.currentSearch.coordinates
           } : undefined
         })
       })

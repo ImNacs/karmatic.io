@@ -47,6 +47,15 @@ export function SearchForm({
   })
 
   const handleSubmit = async (data: SearchFormData) => {
+    // Validate that user has selected a place or used current location
+    if (!selectedPlace && !currentLocationCoords) {
+      form.setError('location', {
+        type: 'manual',
+        message: 'Selecciona una ubicación de la lista o usa tu ubicación actual'
+      })
+      return
+    }
+    
     // Track search initiation
     trackEvent.searchInitiated(data.location, data.query, isAuthenticated)
     
@@ -60,7 +69,7 @@ export function SearchForm({
         secondaryText: selectedPlace.structured_formatting.secondary_text,
       } : undefined,
       // Include coordinates if using current location
-      coordinates: currentLocationCoords || undefined,
+      coordinates: currentLocationCoords || undefined
     })
   }
 
@@ -116,8 +125,9 @@ export function SearchForm({
                   <Input
                     {...field}
                     placeholder={SEARCH_TEXT.queryPlaceholder}
-                    className="pl-10 h-12 text-base"
+                    className="pl-10"
                     disabled={isLoading}
+                    variant="search"
                   />
                 </div>
               </FormControl>

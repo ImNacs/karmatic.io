@@ -5,6 +5,7 @@ import { useAIAssistant } from "@/contexts/AIAssistantContext"
 import { FiSend, FiMessageSquare } from "react-icons/fi"
 import { motion, AnimatePresence } from "motion/react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 export function ChatPanelMobile() {
@@ -61,61 +62,53 @@ export function ChatPanelMobile() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-8 px-4"
           >
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-              <FiMessageSquare className="w-6 h-6 text-muted-foreground" />
-            </div>
-            <h3 className="text-base font-medium mb-1">Chat Assistant</h3>
             <p className="text-sm text-muted-foreground">
-              Escribe tu pregunta para comenzar
+              ¿En qué puedo ayudarte con tu búsqueda?
             </p>
           </motion.div>
         )}
 
         <AnimatePresence>
-          {messages.map((message) => (
+          {messages.map((message, index) => (
             <motion.div
               key={message.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className={cn(
-                "flex items-start gap-3",
-                message.role === "user" && "flex-row-reverse"
-              )}
+              className="w-full"
             >
-              <Avatar className="w-8 h-8 flex-shrink-0">
-                <AvatarFallback
-                  className={cn(
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+              {message.role === "user" ? (
+                // User Message - Visual distinction through size and background
+                <div className="mb-6 py-4 px-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
+                  <h3 className="text-xl font-semibold text-foreground leading-snug">
+                    {message.content}
+                  </h3>
+                  {index === 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white dark:bg-gray-800 text-xs">
+                        <span className="w-1 h-1 bg-green-500 rounded-full"></span>
+                        Buscando
+                      </span>
+                    </div>
                   )}
-                >
-                  {message.role === "user" ? "U" : "AI"}
-                </AvatarFallback>
-              </Avatar>
-
-              <div
-                className={cn(
-                  "flex flex-col gap-1 max-w-[80%]",
-                  message.role === "user" && "items-end"
-                )}
-              >
-                <div
-                  className={cn(
-                    "rounded-2xl px-4 py-2 mobile-shadow-sm",
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  )}
-                >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 </div>
-                <span className="text-xs text-muted-foreground px-1">
-                  {formatTime(new Date(message.timestamp))}
-                </span>
-              </div>
+              ) : (
+                // Assistant Message - Perplexity Style (Clean response)
+                <div className="mb-6">
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <div className="text-sm text-foreground leading-relaxed">
+                      {message.content.split('\n').map((paragraph, pIndex) => {
+                        if (paragraph.trim() === '') return <br key={pIndex} />
+                        
+                        // Regular paragraph
+                        return <p key={pIndex} className="mb-3">{paragraph}</p>
+                      })}
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-border"></div>
+                </div>
+              )}
             </motion.div>
           ))}
         </AnimatePresence>
@@ -124,31 +117,24 @@ export function ChatPanelMobile() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-start gap-3"
+            className="mb-4"
           >
-            <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                AI
-              </AvatarFallback>
-            </Avatar>
-            <div className="bg-muted rounded-2xl px-4 py-2">
-              <div className="flex items-center gap-1">
-                <motion.div
-                  animate={{ opacity: [0.4, 1, 0.4] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="w-2 h-2 bg-muted-foreground rounded-full"
-                />
-                <motion.div
-                  animate={{ opacity: [0.4, 1, 0.4] }}
-                  transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }}
-                  className="w-2 h-2 bg-muted-foreground rounded-full"
-                />
-                <motion.div
-                  animate={{ opacity: [0.4, 1, 0.4] }}
-                  transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }}
-                  className="w-2 h-2 bg-muted-foreground rounded-full"
-                />
-              </div>
+            <div className="flex items-center gap-1">
+              <motion.div
+                animate={{ opacity: [0.4, 1, 0.4] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+                className="w-2 h-2 bg-muted-foreground rounded-full"
+              />
+              <motion.div
+                animate={{ opacity: [0.4, 1, 0.4] }}
+                transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }}
+                className="w-2 h-2 bg-muted-foreground rounded-full"
+              />
+              <motion.div
+                animate={{ opacity: [0.4, 1, 0.4] }}
+                transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }}
+                className="w-2 h-2 bg-muted-foreground rounded-full"
+              />
             </div>
           </motion.div>
         )}
@@ -159,19 +145,14 @@ export function ChatPanelMobile() {
       {/* Input Area */}
       <div className="bg-background p-4 safe-area-bottom">
         <div className="relative">
-          <textarea
+          <Input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Escribe tu pregunta..."
-            className={cn(
-              "w-full resize-none rounded-full bg-muted px-4 py-3 pr-12",
-              "focus:outline-none focus:ring-1 focus:ring-border",
-              "placeholder:text-muted-foreground text-sm",
-              "min-h-[48px] max-h-[120px]"
-            )}
-            rows={1}
+            variant="search"
+            className="pr-12"
           />
           
           <button

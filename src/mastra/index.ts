@@ -5,6 +5,7 @@
 
 import { Mastra } from "@mastra/core";
 import { basicAgent } from "./agents/basic";
+import { apifyMcpServer } from "./mcpServers/apify";
 
 /**
  * Initialize Mastra instance with minimal configuration
@@ -13,6 +14,19 @@ export const mastra = new Mastra({
   agents: {
     basic: basicAgent,
   },
+  // Register MCP servers if available
+  ...(apifyMcpServer && {
+    mcpServers: {
+      apify: apifyMcpServer
+    }
+  })
 });
+
+// Log MCP configuration status
+if (apifyMcpServer) {
+  console.log('✅ Apify MCP server registered with Mastra');
+} else {
+  console.log('ℹ️ Apify MCP server not configured (no API token)');
+}
 
 export default mastra;

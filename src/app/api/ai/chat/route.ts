@@ -25,6 +25,16 @@ interface ChatRequest {
   context?: {
     query?: string
     location?: string
+    placeId?: string
+    placeDetails?: {
+      description: string
+      mainText: string
+      secondaryText: string
+    }
+    coordinates?: {
+      lat: number
+      lng: number
+    }
     [key: string]: any
   }
 }
@@ -41,7 +51,13 @@ export async function POST(request: Request) {
     const body: ChatRequest = await request.json()
     console.log('📝 Chat API: Messages received:', body.messages?.length || 0)
     console.log('🔍 Chat API: SearchId:', body.searchId)
-    console.log('🌍 Chat API: Context:', body.context)
+    console.log('🌍 Chat API: Context:', {
+      location: body.context?.location,
+      query: body.context?.query,
+      placeId: body.context?.placeId,
+      hasPlaceDetails: !!body.context?.placeDetails,
+      hasCoordinates: !!body.context?.coordinates
+    })
     
     if (!body.messages || !Array.isArray(body.messages)) {
       return new Response(
@@ -164,18 +180,50 @@ export async function POST(request: Request) {
     
     // Create a custom transform stream to capture assistant response
     let assistantResponse = ''
+    const decoder = new TextDecoder()
+    
     const transformStream = new TransformStream({
       transform(chunk, controller) {
-        // Capture assistant response for database storage
-        if (typeof chunk === 'string') {
-          assistantResponse += chunk
-        }
+        // AI SDK sends chunks as Uint8Array
         controller.enqueue(chunk)
+        
+        // Decode and parse the chunk to extract text content
+        try {
+          const text = decoder.decode(chunk, { stream: true })
+          const lines = text.split('\n')
+          
+          for (const line of lines) {
+            if (!line.trim()) continue
+            
+            // AI SDK format: "0:chunk content" or similar
+            const colonIndex = line.indexOf(':')
+            if (colonIndex !== -1) {
+              const prefix = line.slice(0, colonIndex)
+              const content = line.slice(colonIndex + 1)
+              
+              // Text chunks have numeric prefixes
+              if (/^\d+$/.test(prefix)) {
+                try {
+                  const textContent = JSON.parse(content)
+                  if (typeof textContent === 'string') {
+                    assistantResponse += textContent
+                  }
+                } catch (e) {
+                  // Ignore parse errors
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // Ignore decode errors
+        }
       },
       flush() {
         // Save assistant response to database when stream completes
         if (assistantResponse.trim()) {
           console.log('💾 Saving assistant response to database...')
+          console.log('Assistant response length:', assistantResponse.length)
+          
           saveMessage(
             conversationId!,
             assistantResponse,
@@ -193,6 +241,8 @@ export async function POST(request: Request) {
               console.warn('⚠️ Database permission issue - see docs/database-permissions-fix.md')
             }
           })
+        } else {
+          console.warn('⚠️ No assistant response captured to save')
         }
       }
     })

@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:apify": "node scripts/test-apify-connection.js"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.11",
@@ -23,7 +24,8 @@
     "@clerk/themes": "^2.2.55",
     "@googlemaps/markerclusterer": "^2.6.2",
     "@hookform/resolvers": "^5.1.1",
-    "@mastra/core": "^0.10.12",
+    "@mastra/core": "^0.10.14",
+    "@mastra/mcp": "^0.10.6",
     "@mastra/memory": "^0.11.2",
     "@mastra/pg": "^0.12.2",
     "@prisma/client": "^6.11.1",
@@ -73,6 +75,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.2.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
     "jest": "^30.0.4",
