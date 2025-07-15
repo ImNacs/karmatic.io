@@ -1,13 +1,13 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-  extensions = [vector]
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [uuid_ossp(map: "uuid-ossp", schema: "extensions"), vector]
 }
 
 model User {
@@ -26,58 +26,49 @@ model User {
   @@index([clerkUserId])
 }
 
-// Conversaciones - Metadatos y agrupación
 model Conversation {
   id        String    @id @default(cuid())
   userId    BigInt?   @map("user_id")
-  sessionId String?   @map("session_id") // Para usuarios anónimos
-  title     String?   // Auto-generado o editado por usuario
-  metadata  Json      @default("{}") // Extensible
+  sessionId String?   @map("session_id")
+  title     String?
+  metadata  Json      @default("{}")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at") // Soft delete
-  
-  // Relaciones
-  user     User?     @relation(fields: [userId], references: [id])
-  messages Message[]
-  
-  // Índices para performance
+  deletedAt DateTime? @map("deleted_at")
+  user      User?     @relation(fields: [userId], references: [id])
+  messages  Message[]
+
   @@index([userId, createdAt(sort: Desc)])
   @@index([sessionId, createdAt(sort: Desc)])
   @@index([deletedAt])
   @@map("conversations")
 }
 
-// Mensajes - El contenido real
 model Message {
   id             BigInt       @id @default(autoincrement())
   conversationId String       @map("conversation_id")
-  content        String       @db.Text
-  role           String       // 'user', 'assistant', 'system'
+  content        String
+  role           String
   messageIndex   Int          @map("message_index")
-  metadata       Json         @default("{}") // search params, sources, etc
+  metadata       Json         @default("{}")
   createdAt      DateTime     @default(now()) @map("created_at")
-  
-  // Relaciones
   conversation   Conversation @relation(fields: [conversationId], references: [id])
-  
-  // Índices compuestos para queries rápidas
+
   @@unique([conversationId, messageIndex])
   @@index([conversationId, createdAt])
   @@map("messages")
 }
 
-// Document se mantiene para otros usos futuros (RAG, embeddings, etc)
 model Document {
-  id         BigInt   @id @default(autoincrement())
-  content    String   @db.Text
-  metadata   Json     @default("{}")
-  embedding  Unsupported("vector(1536)")?
-  fts        Unsupported("tsvector")?
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  
+  id        BigInt                   @id @default(autoincrement())
+  content   String
+  metadata  Json                     @default("{}")
+  embedding Unsupported("vector")?
+  fts       Unsupported("tsvector")?
+  createdAt DateTime                 @default(now()) @map("created_at")
+  updatedAt DateTime                 @updatedAt @map("updated_at")
+
   @@index([createdAt(sort: Desc)])
-  @@index([metadata(ops: JsonbOps)], type: Gin)
+  @@index([metadata], type: Gin)
   @@map("documents")
 }
