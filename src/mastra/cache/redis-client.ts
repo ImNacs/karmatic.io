@@ -41,28 +41,29 @@ export function getRedisClient(): Redis | null {
  * Cache key generators
  */
 export const CacheKeys = {
-  // Google Maps search results
-  googleMapsSearch: (query: string, location: string) => 
-    `gm:search:${query}:${location}`.toLowerCase().replace(/\s+/g, "-"),
+  // Google Places search results
+  placesSearch: (query: string, lat: number, lng: number) => 
+    `places:${query}:${lat}:${lng}`.toLowerCase().replace(/\s+/g, "-"),
   
-  // Agency analysis results
-  agencyAnalysis: (placeId: string) => 
-    `agency:analysis:${placeId}`,
+  // Agency reviews from Apify
+  agencyReviews: (placeId: string) => 
+    `reviews:${placeId}`,
   
-  // Filter results
-  filterResults: (configHash: string) => 
-    `filter:results:${configHash}`,
+  // Trust analysis results
+  trustAnalysis: (placeId: string) => 
+    `trust:${placeId}`,
   
-  // Semantic search embeddings
-  semanticSearch: (queryHash: string) => 
-    `semantic:${queryHash}`,
+  // Perplexity analysis results
+  perplexityAnalysis: (placeId: string) => 
+    `perplexity:${placeId}`,
 };
 
 /**
  * Default TTL values (in seconds)
  */
 export const CacheTTL = {
-  SEARCH_RESULTS: parseInt(process.env.SEMANTIC_CACHE_TTL || "604800"), // 7 days
-  ANALYSIS_RESULTS: 86400 * 30, // 30 days
-  FILTER_RESULTS: 3600, // 1 hour
+  PLACES_SEARCH: 3600,        // 1 hour - places data changes slowly
+  AGENCY_REVIEWS: 86400,      // 24 hours - reviews update daily
+  TRUST_ANALYSIS: 86400,      // 24 hours - trust scores are stable
+  PERPLEXITY_ANALYSIS: 86400 * 7, // 7 days - deep analysis is expensive
 };

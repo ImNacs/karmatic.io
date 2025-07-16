@@ -4,16 +4,13 @@
  */
 
 import { Mastra } from "@mastra/core";
-import { basicAgent } from "./agents/basic";
 import { apifyMcpServer } from "./mcpServers/apify";
 
 /**
  * Initialize Mastra instance with minimal configuration
+ * Temporarily disabled agents until new implementation
  */
 export const mastra = new Mastra({
-  agents: {
-    basic: basicAgent,
-  },
   // Register MCP servers if available
   ...(apifyMcpServer && {
     mcpServers: {

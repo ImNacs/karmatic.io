@@ -10,8 +10,8 @@ const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 
 // Specific actors for car dealership searches
 const AUTOMOTIVE_ACTORS = [
-  'compass/google-maps-extractor',              // Main Google Maps scraper
-  'apify/rag-web-browser'                      // Default web browser
+  'compass/google-maps-reviews-scraper',        // Google Maps Reviews scraper (1000s reviews)
+  'compass/google-maps-extractor',              // Google Maps places data
 ];
 
 // Log configuration status
