@@ -5,9 +5,10 @@
 
 'use client'
 
-import React, { createContext, useContext, useState, useOptimistic, useCallback, startTransition } from 'react'
+import React, { createContext, useContext, useState, useOptimistic, useCallback, startTransition, useEffect } from 'react'
 import { nanoid } from 'nanoid'
 import useSWR from 'swr'
+import { useUser } from '@clerk/nextjs'
 
 /**
  * Individual search history item
@@ -143,6 +144,8 @@ const fetcher = async (url: string) => {
  * ```
  */
 export function SearchHistoryProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useUser()
+  
   // Use SWR for efficient caching and automatic revalidation
   const { data: history = [], isLoading, mutate } = useSWR<SearchGroup[]>(
     '/api/search/history',
@@ -162,6 +165,14 @@ export function SearchHistoryProvider({ children }: { children: React.ReactNode 
       return insertSearchAtTop(currentHistory, optimisticValue)
     }
   )
+  
+  // Clear history when user logs out
+  useEffect(() => {
+    if (!user) {
+      // User logged out, clear the SWR cache
+      mutate([], false)
+    }
+  }, [user, mutate])
   
   // Add optimistic search with temporary ID
   const addOptimisticSearch = useCallback((search: Omit<SearchItem, 'id' | 'createdAt'>) => {
