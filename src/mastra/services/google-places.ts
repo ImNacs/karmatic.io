@@ -3,9 +3,8 @@
  * Busca agencias automotrices de forma inteligente y contextual
  */
 
-import { Agency, Location } from '../karmatic/types';
-import { ANALYSIS_CONFIG } from '../karmatic/config';
-import { loadFilteringCriteria } from '../karmatic/config-loader';
+import { Agency, Location } from '../types';
+import { ANALYSIS_CONFIG } from '../config/analysis.config';
 
 // Configuración de la API
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
@@ -26,7 +25,6 @@ export async function searchAgencies(
   }
   
   const config = ANALYSIS_CONFIG.search;
-  const filteringCriteria = loadFilteringCriteria();
   
   // NO USAR KEYWORD - El query es para análisis, no para filtrar
   // Dejar que Google devuelva TODAS las agencias en el radio
@@ -87,7 +85,7 @@ export async function searchAgencies(
     });
     
     // Ordenar por distancia (los más cercanos primero)
-    agenciesWithDistance.sort((a, b) => a.distance - b.distance);
+    agenciesWithDistance.sort((a: any, b: any) => a.distance - b.distance);
     
     // Convertir a nuestro formato
     const agencies: Agency[] = agenciesWithDistance.map((place: any) => ({

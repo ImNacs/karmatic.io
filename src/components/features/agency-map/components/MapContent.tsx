@@ -333,7 +333,12 @@ export const MapContent: React.FC<MapContentProps> = ({
               text: review.comment
             })),
             business_status: 'OPERATIONAL',
-            vicinity: agency.address
+            vicinity: agency.address,
+            // Campos de trust analysis
+            trustScore: agency.trustScore,
+            trustLevel: agency.trustLevel,
+            redFlags: agency.redFlags,
+            greenFlags: agency.greenFlags
           }))}
           currentAgencyIndex={mobileCardIndex}
           selectedAgencies={selectedAgencies}

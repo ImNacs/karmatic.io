@@ -19,7 +19,7 @@ import { AIAssistantProvider } from "@/contexts/AIAssistantContext"
 import { motion } from "motion/react"
 import { UserButton } from "@clerk/nextjs"
 import type { Agency } from "@/types/agency"
-import { transformStoredDataToAgency, validateAndNormalizeStoredData, sortAgenciesByTrust } from "@/lib/karmatic/data-transformer"
+import { transformStoredDataToAgency, validateAndNormalizeStoredData, sortAgenciesByTrust } from "@/mastra/services/data-transformer"
 
 interface ExplorerResultsProps {
   searchId: string

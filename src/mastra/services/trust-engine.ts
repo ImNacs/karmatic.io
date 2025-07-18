@@ -3,7 +3,7 @@
  * Versión simplificada para MVP - Fase 1
  */
 
-import { Review, TrustAnalysis } from './types';
+import { Review, TrustAnalysis } from '../types';
 
 // Palabras clave que indican problemas de fraude o malas prácticas
 const FRAUD_KEYWORDS = [

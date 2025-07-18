@@ -4,7 +4,7 @@
  */
 
 import { Mastra } from "@mastra/core";
-import { chatAgent } from "./agents";
+import { chatAgent, validationAgent } from "./agents";
 
 /**
  * Inicializar instancia de Mastra con agentes
@@ -13,10 +13,11 @@ import { chatAgent } from "./agents";
 export const mastra = new Mastra({
   // Registrar agentes
   agents: {
-    chat: chatAgent
+    chat: chatAgent,
+    validation: validationAgent
   }
 });
 
-console.log('✅ Mastra inicializado con agente de chat');
+console.log('✅ Mastra inicializado con agentes de chat y validación');
 
 export default mastra;

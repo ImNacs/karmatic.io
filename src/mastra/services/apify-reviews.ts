@@ -3,7 +3,7 @@
  * Obtiene TODAS las reviews de una agencia (cientos/miles)
  */
 
-import { Review } from '../karmatic/types';
+import { Review } from '../types';
 
 // Configuración de Apify
 const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;

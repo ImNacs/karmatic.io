@@ -51,7 +51,7 @@ export async function runApifyActor<T = any>(
     const run = await client.actor(actorId).call(input, {
       memory: options?.memory || 256,
       timeout: options?.timeout || 60,
-      waitForFinish: options?.waitForFinish || 120
+      waitSecs: options?.waitForFinish || 120
     });
     
     if (!run) {

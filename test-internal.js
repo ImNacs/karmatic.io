@@ -13,13 +13,13 @@ console.log('🧪 Iniciando pruebas internas...');
 console.log('\n📁 Test 1: Verificando archivos del sistema...');
 
 const requiredFiles = [
-  'src/lib/karmatic/types.ts',
-  'src/lib/karmatic/query-parser.ts',
-  'src/lib/karmatic/trust-engine.ts',
-  'src/lib/karmatic/data-pipeline.ts',
-  'src/lib/apis/google-places.ts',
-  'src/lib/apis/apify-reviews.ts',
-  'src/lib/apis/perplexity.ts',
+  'src/mastra/types.ts',
+  'src/mastra/query-parser.ts',
+  'src/mastra/trust-engine.ts',
+  'src/mastra/data-pipeline.ts',
+  'src/mastra/services/google-places.ts',
+  'src/mastra/services/apify-reviews.ts',
+  'src/mastra/services/perplexity.ts',
   'src/app/api/analyze/route.ts'
 ];
 
@@ -129,7 +129,7 @@ try {
 console.log('\n📝 Test 5: Verificando tipos TypeScript...');
 
 try {
-  const typesContent = fs.readFileSync('src/lib/karmatic/types.ts', 'utf8');
+  const typesContent = fs.readFileSync('src/mastra/types.ts', 'utf8');
   
   const hasAnalysisResult = typesContent.includes('interface AnalysisResult');
   const hasTrustAnalysis = typesContent.includes('interface TrustAnalysis');
@@ -155,9 +155,9 @@ try {
 console.log('\n🔌 Test 6: Verificando API wrappers...');
 
 const apiWrappers = [
-  { file: 'src/lib/apis/google-places.ts', functions: ['searchNearbyAgencies', 'getAgencyDetails'] },
-  { file: 'src/lib/apis/apify-reviews.ts', functions: ['getQuickReviews', 'scrapeAllReviews'] },
-  { file: 'src/lib/apis/perplexity.ts', functions: ['parseComplexQuery', 'analyzeAgencyDeep'] }
+  { file: 'src/mastra/services/google-places.ts', functions: ['searchNearbyAgencies', 'getAgencyDetails'] },
+  { file: 'src/mastra/services/apify-reviews.ts', functions: ['getQuickReviews', 'scrapeAllReviews'] },
+  { file: 'src/mastra/services/perplexity.ts', functions: ['parseComplexQuery', 'analyzeAgencyDeep'] }
 ];
 
 apiWrappers.forEach(({ file, functions }) => {
@@ -179,7 +179,7 @@ apiWrappers.forEach(({ file, functions }) => {
 console.log('\n🔄 Test 7: Verificando Data Pipeline...');
 
 try {
-  const pipelineContent = fs.readFileSync('src/lib/karmatic/data-pipeline.ts', 'utf8');
+  const pipelineContent = fs.readFileSync('src/mastra/data-pipeline.ts', 'utf8');
   
   const hasRunPipeline = pipelineContent.includes('export async function runAnalysisPipeline');
   const hasProcessAgency = pipelineContent.includes('async function processAgency');

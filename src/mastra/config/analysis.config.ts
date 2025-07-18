@@ -57,15 +57,12 @@ export const ANALYSIS_CONFIG = {
   // 3. CONFIGURACIÓN DE VALIDACIÓN (RESPALDO)
   // ============================================
   
-  // 🔍 Validación básica (si falla filtering-criteria.json)
+  // 🔍 Validación con agente IA
   validation: {
     enabled: true,
     reviewsToAnalyze: 15,                  // Máximo de reseñas a analizar
-    minAutomotivePercentage: 60,           // % mínimo de reseñas automotrices
-    
-    // Keywords de respaldo (mínimas)
-    automotiveKeywords: ['auto', 'carro', 'coche', 'vehículo', 'agencia', 'concesionario'],
-    excludeKeywords: ['comida', 'restaurante', 'hotel', 'escuela', 'hospital']
+    minReviewsForAnalysis: 5,              // Mínimo de reseñas para análisis confiable
+    validationModel: 'deepseek-chat',      // Modelo para validación binaria
   },
   
   // ============================================

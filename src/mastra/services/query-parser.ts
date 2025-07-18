@@ -3,7 +3,7 @@
  * Versión simplificada con reglas básicas + fallback a Perplexity
  */
 
-import { ParsedQuery, Location } from './types';
+import { ParsedQuery, Location } from '../types';
 
 // Marcas de autos más comunes en México
 const MARCAS_CONOCIDAS = [

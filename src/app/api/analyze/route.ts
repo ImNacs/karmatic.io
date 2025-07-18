@@ -5,9 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { parseQuery } from '@/lib/karmatic/query-parser';
-import { runAnalysisPipeline, getPipelineSummary } from '@/lib/karmatic/data-pipeline';
-import { Location, ParsedQuery, AnalysisResponse, KarmaticError } from '@/lib/karmatic/types';
+import { parseQuery } from '@/mastra/services/query-parser';
+import { runAnalysisPipeline, getPipelineSummary } from '@/mastra/services/pipeline';
+import { Location, ParsedQuery, AnalysisResponse, KarmaticError } from '@/mastra/types';
 
 // Configuración del endpoint
 const ENDPOINT_CONFIG = {

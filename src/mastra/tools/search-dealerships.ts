@@ -9,9 +9,10 @@
 import { createTool } from '@mastra/core'
 import { z } from 'zod'
 import { nanoid } from 'nanoid'
-import { runAnalysisPipeline } from '../../lib/karmatic/data-pipeline'
+import { runAnalysisPipeline } from '../services/pipeline'
 import type { Citation } from '../../types/citations'
 import type { Agency } from '../../types/agency'
+import type { ParsedQuery, Location } from '../types'
 
 /**
  * Schema de entrada para la búsqueda
@@ -64,7 +65,6 @@ const outputSchema = z.object({
  */
 export const searchDealerships = createTool({
   id: 'search_dealerships',
-  name: 'Buscar Concesionarios',
   description: 'Busca concesionarios de autos cercanos con análisis de confianza',
   inputSchema,
   outputSchema,
@@ -77,17 +77,24 @@ export const searchDealerships = createTool({
     
     try {
       // Usar el pipeline existente para buscar agencias
-      const searchParams = {
-        query: context.query || null,
+      const searchParams: ParsedQuery = {
+        originalQuery: context.query || 'agencias automotrices',
         location: {
           lat: context.location.lat,
           lng: context.location.lng,
           address: context.location.address || ''
-        }
+        },
+        parseMethod: 'fallback' as const
+      }
+      
+      const userLocation: Location = {
+        lat: context.location.lat,
+        lng: context.location.lng,
+        address: context.location.address || ''
       }
       
       // Ejecutar pipeline de análisis
-      const analysisResponse = await runAnalysisPipeline(searchParams)
+      const analysisResponse = await runAnalysisPipeline(searchParams, userLocation)
       
       console.log(`✅ searchDealerships: ${analysisResponse.agencies.length} agencias encontradas`)
       

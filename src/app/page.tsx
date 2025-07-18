@@ -16,7 +16,7 @@ import { useSearchLimit } from "@/components/features/search/hooks/useSearchLimi
 import { trackEvent } from "@/lib/gtm/gtm"
 import { useGooglePlaces } from "@/lib/google-places"
 import { useSearchHistory } from "@/contexts/SearchHistoryContext"
-import { transformAnalysisResponseToStoredFormat } from "@/lib/karmatic/data-transformer"
+import { transformAnalysisResponseToStoredFormat } from "@/mastra/services/data-transformer"
 
 /**
  * Home page component with agency search functionality
@@ -128,8 +128,10 @@ export default function Home() {
           query: data.query,
           placeId: data.placeId,
           coordinates,
-          results: searchResults.agencies || [],
-          metadata: searchResults.metadata
+          results: {
+            agencies: searchResults.agencies || [],
+            metadata: searchResults.metadata
+          }
         })
       })
       

@@ -7,3 +7,4 @@
 
 export { searchDealerships } from './search-dealerships'
 export { analyzeReviews } from './analyze-reviews'
+export { validateAgency } from './validate-agency'

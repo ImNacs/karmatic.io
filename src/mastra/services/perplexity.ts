@@ -419,7 +419,7 @@ export function isOpenRouterAvailable(): boolean {
  */
 export function getOptimalModel(task: 'query_parsing' | 'deep_analysis' | 'sentiment' | 'faq_generation'): string {
   // Importar configuración
-  const { DEEP_ANALYSIS_CONFIG } = require('../karmatic/config');
+  const { DEEP_ANALYSIS_CONFIG } = require('../config/analysis.config');
   
   // Si es análisis profundo, usar el modelo configurado
   if (task === 'deep_analysis') {

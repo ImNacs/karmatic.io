@@ -21,7 +21,11 @@ export default async function ExplorerSearchPage({ params }: PageProps) {
     
     // Extract data from resultsJson
     const searchData = searchHistory.resultsJson as any
-    const agencies = searchData?.agencies || searchData?.results?.agencies || []
+    
+    // La estructura real es metadata.results.agencies
+    // porque en search-tracking.ts se guarda como metadata.results = results
+    // y en page.tsx se envía como results: { agencies: [...] }
+    const agencies = searchData?.results?.agencies || searchData?.agencies || []
     const coordinates = searchData?.coordinates || searchData?.results?.coordinates
     
     return (

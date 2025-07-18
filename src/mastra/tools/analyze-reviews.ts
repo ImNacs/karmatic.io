@@ -9,10 +9,10 @@
 import { createTool } from '@mastra/core'
 import { z } from 'zod'
 import { nanoid } from 'nanoid'
-import { getReviewsSync } from '../../lib/apis/apify-reviews-sync'
-import { analyzeTrust } from '../../lib/karmatic/trust-engine'
+import { getReviewsSync } from '../services/apify-reviews-sync'
+import { analyzeTrust } from '../services/trust-engine'
 import type { Citation } from '../../types/citations'
-import type { Review } from '../../lib/karmatic/types'
+import type { Review } from '../types'
 
 /**
  * Schema de entrada para el análisis
@@ -75,7 +75,6 @@ const outputSchema = z.object({
  */
 export const analyzeReviews = createTool({
   id: 'analyze_reviews',
-  name: 'Analizar Reseñas',
   description: 'Analiza las reseñas de una agencia para determinar su confianza',
   inputSchema,
   outputSchema,
@@ -88,16 +87,16 @@ export const analyzeReviews = createTool({
     
     try {
       // Obtener reseñas usando Apify
-      const reviewsData = await getReviewsSync(context.placeId, context.limit)
+      const reviews = await getReviewsSync(context.placeId, '1 year', 'newest', context.limit)
       
-      if (!reviewsData.success || !reviewsData.reviews) {
+      if (!reviews || reviews.length === 0) {
         throw new Error('No se pudieron obtener las reseñas')
       }
       
-      console.log(`✅ analyzeReviews: ${reviewsData.reviews.length} reseñas obtenidas`)
+      console.log(`✅ analyzeReviews: ${reviews.length} reseñas obtenidas`)
       
       // Analizar confianza
-      const trustAnalysis = analyzeTrust(reviewsData.reviews, reviewsData.metadata || {})
+      const trustAnalysis = analyzeTrust(reviews)
       
       // Crear citation para Google Places
       const googleReviewsSource: Citation = {
@@ -106,15 +105,15 @@ export const analyzeReviews = createTool({
         title: `Reseñas de Google - ${context.agencyName}`,
         type: 'reviews',
         metadata: {
-          reviewCount: reviewsData.reviews.length,
-          averageRating: reviewsData.metadata?.rating || 0,
-          lastUpdated: new Date().toISOString()
+          reviewCount: reviews.length,
+          averageRating: 0, // No tenemos el rating promedio aquí
+          lastUpdated: new Date()
         }
       }
       
       // Calcular métricas adicionales
-      const totalReviews = reviewsData.reviews.length
-      const rating = reviewsData.metadata?.rating || 0
+      const totalReviews = reviews.length
+      const rating = 0 // No tenemos el rating promedio aquí
       
       return {
         analysis: {

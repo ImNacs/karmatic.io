@@ -8,6 +8,7 @@
 import React from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { TrustIndicator } from '@/components/trust'
 import { 
   FiStar, 
   FiMapPin, 
@@ -78,6 +79,21 @@ export const AgencyInfoWindow: React.FC<AgencyInfoWindowProps> = ({
               <span className="text-sm text-muted-foreground">•</span>
               <span className="text-sm text-muted-foreground">{agency.distance}</span>
             </div>
+            {(agency.trustScore || agency.trustLevel) && (
+              <div className="mt-2">
+                <TrustIndicator
+                  trustScore={agency.trustScore}
+                  trustLevel={agency.trustLevel}
+                  redFlags={agency.redFlags}
+                  greenFlags={agency.greenFlags}
+                  options={{
+                    variant: 'badge',
+                    size: 'sm',
+                    showTooltip: true
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-2 text-sm">

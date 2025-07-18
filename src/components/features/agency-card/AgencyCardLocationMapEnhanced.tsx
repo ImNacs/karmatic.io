@@ -5,6 +5,7 @@ import { motion, AnimatePresence, PanInfo, useAnimation } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { TrustIndicator } from '@/components/trust'
 import { 
   FiStar,
   FiMapPin,
@@ -64,6 +65,14 @@ interface AgencyData {
   business_status: string
   /** Neighborhood/area name */
   vicinity: string
+  /** Trust score from Karmatic analysis */
+  trustScore?: number
+  /** Trust level from Karmatic analysis */
+  trustLevel?: 'muy_alta' | 'alta' | 'media' | 'baja' | 'muy_baja'
+  /** Red flags from trust analysis */
+  redFlags?: string[]
+  /** Green flags from trust analysis */
+  greenFlags?: string[]
 }
 
 /**
@@ -447,9 +456,24 @@ export function AgencyCardLocationMapEnhanced({
                   <h3 className="font-semibold text-lg md:text-xl lg:text-2xl leading-tight line-clamp-1">
                     {currentAgency.name}
                   </h3>
-                  <p className="text-sm md:text-base text-muted-foreground">
-                    {currentIndex + 1} de {agencies.length} agencias
-                  </p>
+                  <div className="flex items-center gap-4 mt-1">
+                    <p className="text-sm md:text-base text-muted-foreground">
+                      {currentIndex + 1} de {agencies.length} agencias
+                    </p>
+                    {(currentAgency.trustScore || currentAgency.trustLevel) && (
+                      <TrustIndicator
+                        trustScore={currentAgency.trustScore}
+                        trustLevel={currentAgency.trustLevel}
+                        redFlags={currentAgency.redFlags}
+                        greenFlags={currentAgency.greenFlags}
+                        options={{
+                          variant: 'badge',
+                          size: 'sm',
+                          showTooltip: true
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
               

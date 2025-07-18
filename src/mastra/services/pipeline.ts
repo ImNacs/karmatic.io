@@ -4,14 +4,13 @@
  * Versión simplificada para MVP - Fase 1
  */
 
-import { ParsedQuery, Agency, Location, AnalysisResult } from './types';
-import { searchAgencies } from '../apis/google-places';
-import { getRelevantReviewsForValidation, getReviewsSync } from '../apis/apify-reviews-sync';
+import { ParsedQuery, Agency, Location, AnalysisResult } from '../types';
+import { searchAgencies } from './google-places';
+import { getRelevantReviewsForValidation, getReviewsSync } from './apify-reviews-sync';
 import { analyzeTrust } from './trust-engine';
-import { analyzeAgencyDeep } from '../apis/perplexity';
-import { ANALYSIS_CONFIG } from './config';
+import { analyzeAgencyDeep } from './perplexity';
+import { ANALYSIS_CONFIG } from '../config/analysis.config';
 import { EnhancedAgencyValidator } from './enhanced-validator';
-import { loadFilteringCriteria } from './config-loader';
 
 // Cache de validación
 const validationCache = new Map<string, { isValid: boolean; confidence: number; timestamp: number }>();
@@ -76,8 +75,7 @@ export async function runAnalysisPipeline(
     console.log('📍 Paso 1: Buscando agencias cercanas...');
     
     let nearbyAgencies: Agency[] = [];
-    const filterCriteria = enhancedValidator['criteria'];
-    let currentRadius = ANALYSIS_CONFIG.search.radiusMeters;
+    const currentRadius = ANALYSIS_CONFIG.search.radiusMeters;
     
     // Buscar con API de Google Places (Text Search)
     nearbyAgencies = await searchAgencies(
@@ -85,40 +83,6 @@ export async function runAnalysisPipeline(
       query.originalQuery,
       currentRadius
     );
-    
-    // Implementar expand_search si está habilitado y hay pocos resultados
-    if (filterCriteria.features.expandSearchRadius && nearbyAgencies.length < 5) {
-      console.log('🔍 Expandiendo radio de búsqueda por pocos resultados...');
-      
-      const triedRadii = new Set([currentRadius]);
-      
-      while (nearbyAgencies.length < 10 && currentRadius < filterCriteria.features.maxRadiusExpansion) {
-        currentRadius = Math.min(currentRadius * 1.5, filterCriteria.features.maxRadiusExpansion);
-        
-        if (triedRadii.has(currentRadius)) break;
-        triedRadii.add(currentRadius);
-        
-        console.log(`🔄 Intentando con radio de ${currentRadius}m...`);
-        
-        try {
-          const expandedResults = await searchAgencies(
-            userLocation,
-            query.originalQuery,
-            currentRadius
-          );
-          
-          // Agregar solo agencias nuevas
-          const existingIds = new Set(nearbyAgencies.map(a => a.placeId));
-          const newAgencies = expandedResults.filter(a => !existingIds.has(a.placeId));
-          nearbyAgencies.push(...newAgencies);
-          
-          console.log(`✅ Encontradas ${newAgencies.length} agencias adicionales (total: ${nearbyAgencies.length})`);
-        } catch (error) {
-          console.warn(`⚠️ Error expandiendo búsqueda:`, error);
-          break;
-        }
-      }
-    }
     
     if (nearbyAgencies.length === 0) {
       throw new Error('No se encontraron agencias automotrices cercanas');
@@ -130,7 +94,6 @@ export async function runAnalysisPipeline(
     console.log('🔍 FASE 1: Validando negocios automotrices...');
     const validatedAgencies: Agency[] = [];
     const invalidAgencies: { agency: Agency; reason: string }[] = [];
-    const config = loadFilteringCriteria();
     
     // Validar cada agencia
     for (const agency of nearbyAgencies) {
@@ -145,7 +108,7 @@ export async function runAnalysisPipeline(
         const validationResult = await validateAgency(agency, enhancedValidator);
         
         if (validationResult.isValid && 
-            validationResult.confidence >= (config.validation?.minConfidenceToAnalyze || 70)) {
+            validationResult.confidence >= 70) {
           validatedAgencies.push(agency);
           console.log(`✅ ${agency.name} - Validado (confianza: ${validationResult.confidence}%): ${validationResult.reason}`);
         } else {
@@ -346,20 +309,17 @@ async function validateAgency(
   agency: Agency, 
   enhancedValidator: EnhancedAgencyValidator
 ): Promise<{ isValid: boolean; confidence: number; reason: string }> {
-  // Verificar caché primero
-  const config = loadFilteringCriteria();
   const cacheKey = agency.placeId;
   
-  if (config.validation?.cacheValidationResults) {
-    const cached = validationCache.get(cacheKey);
-    if (cached) {
-      const cacheAge = Date.now() - cached.timestamp;
-      const maxAge = (config.validation.validationCacheTTLHours || 24) * 60 * 60 * 1000;
-      
-      if (cacheAge < maxAge) {
-        console.log(`📋 Usando validación en caché para ${agency.name}`);
-        return { isValid: cached.isValid, confidence: cached.confidence, reason: 'Desde caché' };
-      }
+  // Verificar caché primero
+  const cached = validationCache.get(cacheKey);
+  if (cached) {
+    const cacheAge = Date.now() - cached.timestamp;
+    const maxAge = 24 * 60 * 60 * 1000; // 24 horas
+    
+    if (cacheAge < maxAge) {
+      console.log(`📋 Usando validación en caché para ${agency.name}`);
+      return { isValid: cached.isValid, confidence: cached.confidence, reason: 'Desde caché' };
     }
   }
   
@@ -367,7 +327,7 @@ async function validateAgency(
     // Obtener reseñas más relevantes para validación
     const validationReviews = await getRelevantReviewsForValidation(
       agency.placeId,
-      config.validation?.maxReviewsForValidation || 15
+      ANALYSIS_CONFIG.validation.reviewsToAnalyze
     );
     
     if (validationReviews.length === 0) {
@@ -376,16 +336,14 @@ async function validateAgency(
     }
     
     // Validar con enhanced validator
-    const result = enhancedValidator.validateAgency(agency, validationReviews);
+    const result = await enhancedValidator.validateAgency(agency, validationReviews);
     
     // Guardar en caché
-    if (config.validation?.cacheValidationResults) {
-      validationCache.set(cacheKey, {
-        isValid: result.isValid,
-        confidence: result.confidence,
-        timestamp: Date.now()
-      });
-    }
+    validationCache.set(cacheKey, {
+      isValid: result.isValid,
+      confidence: result.confidence,
+      timestamp: Date.now()
+    });
     
     return {
       isValid: result.isValid,
@@ -412,14 +370,11 @@ async function analyzeValidAgency(
   
   try {
     // Obtener reseñas completas del último año
-    const config = loadFilteringCriteria();
-    const maxReviews = config.thresholds.maxReviewsToAnalyze || 100;
-    
     const reviews = await getReviewsSync(
       agency.placeId,
-      '1 year',
-      'newest',
-      maxReviews
+      ANALYSIS_CONFIG.reviews.reviewsPeriod,
+      ANALYSIS_CONFIG.reviews.reviewsSort,
+      ANALYSIS_CONFIG.reviews.maxReviewsPerAgency
     );
     
     console.log(`📝 Obtenidas ${reviews.length} reseñas para análisis completo`);

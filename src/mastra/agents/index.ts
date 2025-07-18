@@ -5,7 +5,7 @@
 
 import { Agent } from '@mastra/core'
 import { openai } from '@ai-sdk/openai'
-import { searchDealerships, analyzeReviews } from '../tools'
+import { searchDealerships, analyzeReviews, validateAgency } from '../tools'
 
 /**
  * ChatAgent configurado con todas las herramientas
@@ -64,5 +64,34 @@ export const chatAgent = new Agent({
   tools: {
     searchDealerships,
     analyzeReviews
+  }
+})
+
+/**
+ * ValidationAgent - Agente simplificado que usa la tool de validación
+ * 
+ * Este agente valida si un negocio es una agencia automotriz legítima
+ * analizando sus reseñas con IA.
+ */
+export const validationAgent = new Agent({
+  name: 'validation',
+  description: 'Agente de validación de agencias automotrices',
+  
+  instructions: `
+    Eres un validador especializado en determinar si un negocio es una agencia automotriz legítima.
+    
+    Tu única tarea es validar negocios usando la herramienta validateAgency.
+    
+    IMPORTANTE:
+    - Solo valida si es una agencia que VENDE autos
+    - Excluye talleres, motocicletas, rentas, etc.
+    - Proporciona un nivel de confianza en tu validación
+  `,
+  
+  model: openai('gpt-4o-mini'),
+  
+  // Herramientas disponibles
+  tools: {
+    validateAgency
   }
 })

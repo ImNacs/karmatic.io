@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { TrustIndicator } from "@/components/trust"
 import { 
   FiStar, 
   FiPhone, 
@@ -143,6 +144,21 @@ export function AgencyDetail({
                   {agency.isHighRated ? "Destacada" : "Estándar"}
                 </Badge>
               </div>
+              {(agency.trustScore || agency.trustLevel) && (
+                <div className="mt-3">
+                  <TrustIndicator
+                    trustScore={agency.trustScore}
+                    trustLevel={agency.trustLevel}
+                    redFlags={agency.redFlags}
+                    greenFlags={agency.greenFlags}
+                    options={{
+                      variant: 'full',
+                      size: 'md',
+                      showTooltip: true
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
