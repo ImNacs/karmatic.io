@@ -117,11 +117,16 @@ const fetcher = async (url: string) => {
     const res = await fetch(url, {
       credentials: 'include', // Include cookies for anonymous tracking
     })
-    if (!res.ok) {
-      console.error('Failed to fetch search history:', res.status)
-      throw new Error('Failed to fetch')
-    }
+    
+    // Always try to parse JSON response
     const data = await res.json()
+    
+    if (!res.ok) {
+      console.error('Failed to fetch search history:', res.status, data)
+      // Don't throw, return empty array
+      return []
+    }
+    
     console.log('Fetched search history:', data)
     return data.searches || []
   } catch (error) {

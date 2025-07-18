@@ -35,7 +35,12 @@ export async function GET(request: NextRequest) {
     
     if (error) {
       console.error('Error fetching search history:', error)
-      throw error
+      console.error('Details:', { dbUserId, sessionId, error })
+      // Don't throw, return empty array instead
+      return NextResponse.json({
+        searches: [],
+        total: 0
+      })
     }
     
     // Transform data to match existing UI format
