@@ -1,80 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
-import { getOrCreateSearchSession } from '@/lib/search-tracking'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth()
-    const sessionId = await getOrCreateSearchSession()
     
-    // Get user ID from Clerk if authenticated
-    let dbUserId = null
+    let conversations = []
+    
     if (userId) {
-      const { data: user } = await supabase
-        .from('User')
-        .select('id')
-        .eq('clerkUserId', userId)
-        .single()
-      
-      dbUserId = user?.id
-    }
-    
-    // Get search history from conversations table
-    let query = supabase
-      .from('conversations')
-      .select('*')
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false })
-      .limit(50)
-    
-    if (dbUserId) {
-      query = query.eq('user_id', dbUserId)
-    } else if (sessionId) {
-      query = query.eq('session_id', sessionId)
-    }
-    
-    const { data: conversations, error } = await query
-    
-    if (error) {
-      console.error('Error fetching search history:', error)
-      console.error('Details:', { dbUserId, sessionId, error })
-      // Don't throw, return empty array instead
-      return NextResponse.json({
-        searches: [],
-        total: 0
+      // Get authenticated user's search history
+      const user = await prisma.user.findUnique({
+        where: { clerkUserId: userId }
       })
+      
+      if (user) {
+        conversations = await prisma.conversation.findMany({
+          where: { 
+            userId: user.id,
+            deletedAt: null
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+          select: {
+            id: true,
+            title: true,
+            metadata: true,
+            createdAt: true
+          }
+        })
+      }
     }
     
-    // Debug log
-    console.log('🔍 Search history - conversations found:', conversations?.length || 0)
-    console.log('🔍 Search history - first conversation:', conversations?.[0])
-    
-    // Transform conversations to match existing UI format
-    const transformedSearches = (conversations || []).map((conv: any) => {
-      const metadata = conv.metadata || {}
+    // Transform conversations to search history format
+    const searchHistory = conversations.map(conv => {
+      const metadata = conv.metadata as any || {}
       
-      // Extract location and query from metadata
+      // Extract location and query from metadata or title
       let location = metadata.location || ''
       let query = metadata.query || ''
       
-      // If metadata doesn't have location/query, try to extract from title
+      // If no location in metadata, try to extract from title
       if (!location && conv.title) {
-        // Title format might be "query en location" or just "location"
-        const match = conv.title.match(/(.+) en (.+)/) || conv.title.match(/(.+)/)
+        const match = conv.title.match(/(.+) en (.+)/)
         if (match) {
-          if (match[2]) {
-            query = match[1]
-            location = match[2]
-          } else {
-            location = match[1]
-          }
+          query = match[1]
+          location = match[2]
+        } else {
+          location = conv.title
         }
       }
       
@@ -82,27 +55,24 @@ export async function GET(request: NextRequest) {
         id: conv.id,
         location: location || 'Sin ubicación',
         query: query || null,
-        createdAt: conv.created_at
+        createdAt: conv.createdAt
       }
-    }).filter(search => search.location) // Filter out empty searches
+    }).filter(item => item.location && item.location !== 'Sin ubicación')
     
-    // Group by date using existing function
-    const grouped = groupSearchesByDate(transformedSearches)
-    
-    console.log('🔍 Search history - transformed searches:', transformedSearches.length)
-    console.log('🔍 Search history - grouped:', grouped)
+    // Group by date
+    const grouped = groupSearchesByDate(searchHistory)
     
     return NextResponse.json({
       searches: grouped,
-      total: transformedSearches.length
+      total: searchHistory.length
     })
     
   } catch (error) {
     console.error('Error fetching search history:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch search history' },
-      { status: 500 }
-    )
+    return NextResponse.json({
+      searches: [],
+      total: 0
+    })
   }
 }
 
