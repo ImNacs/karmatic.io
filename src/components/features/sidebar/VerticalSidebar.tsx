@@ -25,7 +25,6 @@ import {
   FiTrendingUp,
   FiX 
 } from "react-icons/fi"
-import { SearchHistory } from "./SearchHistory"
 
 /**
  * Props for VerticalSidebar component
@@ -104,9 +103,9 @@ const SidebarContent = React.memo(({
       ))}
     </nav>
     
-    {/* Search History Section */}
+    {/* Search History Section - TODO: Implement */}
     <div className="flex-1 overflow-hidden">
-      <SearchHistory />
+      {/* SearchHistory component removed - functionality pending */}
     </div>
 
     {/* User Section */}
