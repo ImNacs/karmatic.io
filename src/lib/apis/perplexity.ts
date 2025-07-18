@@ -252,8 +252,23 @@ export async function analyzeAgencyDeep(
     // Usar el modelo óptimo para análisis profundo
     const response = await queryPerplexity(prompt, getOptimalModel('deep_analysis'));
     
+    // Limpiar respuesta de markdown code blocks
+    let cleanResponse = response;
+    
+    // Remover code blocks de markdown
+    if (response.includes('```json')) {
+      cleanResponse = response
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim();
+    } else if (response.includes('```')) {
+      cleanResponse = response
+        .replace(/```\s*/g, '')
+        .trim();
+    }
+    
     // Intentar parsear la respuesta como JSON
-    const parsed = JSON.parse(response);
+    const parsed = JSON.parse(cleanResponse);
     
     console.log('✅ Análisis profundo completado');
     
@@ -403,7 +418,22 @@ export function isOpenRouterAvailable(): boolean {
  * Obtiene el mejor modelo disponible para cada tipo de tarea
  */
 export function getOptimalModel(task: 'query_parsing' | 'deep_analysis' | 'sentiment' | 'faq_generation'): string {
+  // Importar configuración
+  const { DEEP_ANALYSIS_CONFIG } = require('../karmatic/config');
   
+  // Si es análisis profundo, usar el modelo configurado
+  if (task === 'deep_analysis') {
+    const configuredModel = DEEP_ANALYSIS_CONFIG.defaultModel;
+    
+    // Mapear nombres de modelos si es necesario
+    if (configuredModel === 'kimi-k2') {
+      return 'moonshotai/kimi-k2';
+    }
+    
+    return configuredModel;
+  }
+  
+  // Para otras tareas, usar lógica original
   switch (task) {
     case 'query_parsing':
       // Para análisis complejo de queries - usar Kimi K2 si está disponible
@@ -411,10 +441,6 @@ export function getOptimalModel(task: 'query_parsing' | 'deep_analysis' | 'senti
         return 'moonshot/moonshot-v1-32k'; // Kimi K2 - excelente para razonamiento
       }
       return 'sonar-reasoning-pro'; // Fallback a Perplexity
-      
-    case 'deep_analysis':
-      // Para análisis profundo - sonar-pro es suficiente y más económico
-      return 'sonar-pro';
       
     case 'sentiment':
       // Para análisis de sentimientos - modelo más básico

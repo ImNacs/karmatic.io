@@ -24,7 +24,7 @@ export function serializeBigInt<T extends Record<string, any>>(obj: T): T {
   for (const key in serialized) {
     if (typeof serialized[key] === 'bigint') {
       serialized[key] = serialized[key].toString() as any;
-    } else if (serialized[key] instanceof Date) {
+    } else if (serialized[key] && typeof serialized[key] === 'object' && serialized[key] instanceof Date) {
       // Keep dates as is
       continue;
     } else if (typeof serialized[key] === 'object' && serialized[key] !== null) {

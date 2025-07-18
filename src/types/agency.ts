@@ -115,6 +115,40 @@ export interface Agency {
   
   /** Operational status (e.g., "OPERATIONAL", "CLOSED") (optional) */
   businessStatus?: string
+  
+  /** Trust analysis data from Karmatic Core Trust Engine (optional) */
+  trustScore?: number
+  
+  /** Trust level based on analysis (optional) */
+  trustLevel?: 'muy_alta' | 'alta' | 'media' | 'baja' | 'muy_baja'
+  
+  /** Red flags identified during analysis (optional) */
+  redFlags?: string[]
+  
+  /** Green flags identified during analysis (optional) */
+  greenFlags?: string[]
+  
+  /** Number of reviews analyzed for trust scoring (optional) */
+  reviewsAnalyzed?: number
+  
+  /** Deep analysis data from Perplexity/OpenRouter (optional) */
+  deepAnalysis?: {
+    /** URL to agency's inventory page */
+    inventoryUrl?: string
+    /** Social media presence */
+    socialMedia?: {
+      /** Facebook page URL */
+      facebook?: string
+      /** Instagram profile URL */
+      instagram?: string
+      /** Official website URL */
+      website?: string
+    }
+    /** Recent news mentions or awards */
+    recentNews?: string[]
+    /** Additional information found during deep analysis */
+    additionalInfo?: string
+  }
 }
 
 /**

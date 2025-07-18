@@ -43,6 +43,16 @@ export interface Agency {
   website?: string;
   openingHours?: string[];
   placeTypes?: string[];
+  // Campos adicionales de Google Places
+  businessStatus?: string;
+  priceLevel?: number;
+  photos?: string[];
+  // Campos calculados
+  relevanceScore?: number; // Score de relevancia para el query del usuario
+  distanceKm?: number; // Distancia en kilómetros desde la ubicación del usuario
+  // Campos temporales
+  hours?: string;
+  phone?: string;
 }
 
 // Review individual de una agencia
