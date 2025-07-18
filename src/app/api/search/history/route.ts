@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
         query: query || null,
         createdAt: conv.createdAt
       }
-    }).filter(item => item.location && item.location !== 'Sin ubicación')
+    })
     
     // Group by date
     const grouped = groupSearchesByDate(searchHistory)
