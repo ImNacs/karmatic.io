@@ -35,8 +35,14 @@ export async function GET(request: NextRequest) {
     }
     
     // Transform conversations to search history format
+    console.log('🔍 Conversations to transform:', conversations.length)
+    if (conversations.length > 0) {
+      console.log('🔍 First conversation:', JSON.stringify(conversations[0], null, 2))
+    }
+    
     const searchHistory = conversations.map(conv => {
       const metadata = conv.metadata as any || {}
+      console.log('🔍 Processing conv:', conv.id, { title: conv.title, metadata })
       
       // Extract location and query from metadata or title
       let location = metadata.location || ''
@@ -53,17 +59,22 @@ export async function GET(request: NextRequest) {
         }
       }
       
-      return {
+      const result = {
         id: conv.id,
         location: location || 'Sin ubicación',
         query: query || null,
         createdAt: conv.createdAt
       }
+      
+      console.log('🔍 Transformed result:', result)
+      return result
     })
     
     // Group by date
     const grouped = groupSearchesByDate(searchHistory)
     
+    console.log('🔍 Final grouped result:', JSON.stringify(grouped, null, 2))
+    console.log('🔍 Total searches:', searchHistory.length)
     
     return NextResponse.json({
       searches: grouped,
