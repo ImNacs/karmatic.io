@@ -4,26 +4,19 @@
  */
 
 import { Mastra } from "@mastra/core";
-import { apifyMcpServer } from "./mcpServers/apify";
+import { chatAgent } from "./agents";
 
 /**
- * Initialize Mastra instance with minimal configuration
- * Temporarily disabled agents until new implementation
+ * Inicializar instancia de Mastra con agentes
+ * Nota: Usando APIs directas en lugar de MCP para mayor estabilidad
  */
 export const mastra = new Mastra({
-  // Register MCP servers if available
-  ...(apifyMcpServer && {
-    mcpServers: {
-      apify: apifyMcpServer
-    }
-  })
+  // Registrar agentes
+  agents: {
+    chat: chatAgent
+  }
 });
 
-// Log MCP configuration status
-if (apifyMcpServer) {
-  console.log('✅ Apify MCP server registered with Mastra');
-} else {
-  console.log('ℹ️ Apify MCP server not configured (no API token)');
-}
+console.log('✅ Mastra inicializado con agente de chat');
 
 export default mastra;

@@ -5,7 +5,7 @@
 
 import { auth } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
-import { mastra } from '@/mastra'
+import { streamChatResponse } from '@/mastra/agents/chat'
 import { saveMessage, getOrCreateSearchSession } from '@/lib/search-tracking'
 import { createClient } from '@supabase/supabase-js'
 
@@ -200,21 +200,23 @@ export async function POST(request: Request) {
       }
     }
     
-    // Get the basic agent
-    const agent = mastra.getAgent('basic')
-    console.log('🤖 Chat API: Agent found:', !!agent)
+    // Stream the response using simplified chat
+    console.log('🌊 Chat API: Starting stream...')
+    console.log('Messages:', JSON.stringify(body.messages, null, 2))
     
-    if (!agent) {
-      console.error('Basic agent not found')
+    let result
+    try {
+      result = await streamChatResponse(body.messages)
+    } catch (streamError) {
+      console.error('❌ Stream error:', streamError)
       return new Response(
-        JSON.stringify({ error: 'AI assistant not available' }),
-        { status: 503, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          error: 'Failed to start AI stream', 
+          details: streamError instanceof Error ? streamError.message : 'Unknown error' 
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
       )
     }
-    
-    // Stream the response using the agent
-    console.log('🌊 Chat API: Starting stream...')
-    const stream = await agent.stream(body.messages)
     
     // Create a custom transform stream to capture assistant response
     let assistantResponse = ''
@@ -287,7 +289,7 @@ export async function POST(request: Request) {
     
     // Return the streaming response with database persistence
     console.log('✅ Chat API: Returning stream response with persistence')
-    const response = stream.toDataStreamResponse()
+    const response = result.toDataStreamResponse()
     
     // Transform the response to capture content
     if (response.body) {
