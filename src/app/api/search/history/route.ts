@@ -52,19 +52,45 @@ export async function GET(request: NextRequest) {
       })
     }
     
+    // Debug log
+    console.log('🔍 Search history - conversations found:', conversations?.length || 0)
+    console.log('🔍 Search history - first conversation:', conversations?.[0])
+    
     // Transform conversations to match existing UI format
     const transformedSearches = (conversations || []).map((conv: any) => {
       const metadata = conv.metadata || {}
+      
+      // Extract location and query from metadata
+      let location = metadata.location || ''
+      let query = metadata.query || ''
+      
+      // If metadata doesn't have location/query, try to extract from title
+      if (!location && conv.title) {
+        // Title format might be "query en location" or just "location"
+        const match = conv.title.match(/(.+) en (.+)/) || conv.title.match(/(.+)/)
+        if (match) {
+          if (match[2]) {
+            query = match[1]
+            location = match[2]
+          } else {
+            location = match[1]
+          }
+        }
+      }
+      
       return {
         id: conv.id,
-        location: metadata.location || '',
-        query: metadata.query || null,
+        location: location || 'Sin ubicación',
+        query: query || null,
         createdAt: conv.created_at
       }
-    })
+    }).filter(search => search.location) // Filter out empty searches
     
     // Group by date using existing function
     const grouped = groupSearchesByDate(transformedSearches)
+    
+    console.log('🔍 Search history - transformed searches:', transformedSearches.length)
+    console.log('🔍 Search history - grouped:', grouped)
     
     return NextResponse.json({
       searches: grouped,
