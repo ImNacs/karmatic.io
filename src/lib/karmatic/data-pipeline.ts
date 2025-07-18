@@ -4,31 +4,29 @@
  * Versión simplificada para MVP - Fase 1
  */
 
-import { ParsedQuery, Agency, Review, TrustAnalysis, Location, AnalysisResult } from './types';
-import { searchNearbyAgencies, getAgencyDetails } from '../apis/google-places';
-import { getQuickReviewsSync } from '../apis/apify-reviews-sync';
+import { ParsedQuery, Agency, Location, AnalysisResult } from './types';
+import { searchAgencies } from '../apis/google-places';
+import { getRelevantReviewsForValidation, getReviewsSync } from '../apis/apify-reviews-sync';
 import { analyzeTrust } from './trust-engine';
 import { analyzeAgencyDeep } from '../apis/perplexity';
+import { ANALYSIS_CONFIG } from './config';
+import { EnhancedAgencyValidator } from './enhanced-validator';
+import { loadFilteringCriteria } from './config-loader';
 
-// Configuración del pipeline
+// Cache de validación
+const validationCache = new Map<string, { isValid: boolean; confidence: number; timestamp: number }>();
+
+// Usar configuración centralizada
 const PIPELINE_CONFIG = {
-  // Número máximo de agencias a procesar
-  maxAgencies: 10,
-  
-  // Timeout general para todo el pipeline
-  timeoutMs: 30000, // 30 segundos
-  
-  // Configuración de reviews
+  maxAgencies: ANALYSIS_CONFIG.pipeline.maxAgencies,
+  timeoutMs: ANALYSIS_CONFIG.pipeline.timeoutMs,
   reviewsConfig: {
-    useQuickReviews: true, // Usar getQuickReviews (50 reviews, 30s timeout)
-    fallbackToBasic: true   // Fallback a reviews básicas si Apify falla
+    fallbackToBasic: ANALYSIS_CONFIG.reviews.fallbackToBasic
   },
-  
-  // Configuración de análisis profundo
   deepAnalysisConfig: {
-    enabled: true,
-    onlyForTopAgencies: true, // Solo para las top 3 agencias
-    minTrustScore: 10        // Solo si trust score > 10 (para pruebas)
+    enabled: ANALYSIS_CONFIG.deepAnalysis.enabled,
+    onlyForTopAgencies: ANALYSIS_CONFIG.deepAnalysis.onlyForTopAgencies,
+    topAgenciesToAnalyze: ANALYSIS_CONFIG.deepAnalysis.topAgenciesToAnalyze
   }
 };
 
@@ -44,6 +42,12 @@ export interface PipelineResult {
     totalWithDeepAnalysis: number;
     executionTimeMs: number;
     errors: string[];
+    totalValidated?: number;
+    totalExcluded?: number;
+    excludedBusinesses?: {
+      name: string;
+      reason: string;
+    }[];
   };
 }
 
@@ -58,6 +62,9 @@ export async function runAnalysisPipeline(
   const startTime = Date.now();
   const errors: string[] = [];
   
+  // Inicializar validador mejorado
+  const enhancedValidator = new EnhancedAgencyValidator();
+  
   console.log('🚀 Iniciando pipeline de análisis:', {
     query: query.originalQuery,
     location: userLocation,
@@ -67,11 +74,51 @@ export async function runAnalysisPipeline(
   try {
     // Paso 1: Buscar agencias cercanas con Google Places
     console.log('📍 Paso 1: Buscando agencias cercanas...');
-    const nearbyAgencies = await searchNearbyAgencies(
+    
+    let nearbyAgencies: Agency[] = [];
+    const filterCriteria = enhancedValidator['criteria'];
+    let currentRadius = ANALYSIS_CONFIG.search.radiusMeters;
+    
+    // Buscar con API de Google Places (Text Search)
+    nearbyAgencies = await searchAgencies(
       userLocation,
-      5000, // 5km radius
-      'auto dealership car dealer'
+      query.originalQuery,
+      currentRadius
     );
+    
+    // Implementar expand_search si está habilitado y hay pocos resultados
+    if (filterCriteria.features.expandSearchRadius && nearbyAgencies.length < 5) {
+      console.log('🔍 Expandiendo radio de búsqueda por pocos resultados...');
+      
+      const triedRadii = new Set([currentRadius]);
+      
+      while (nearbyAgencies.length < 10 && currentRadius < filterCriteria.features.maxRadiusExpansion) {
+        currentRadius = Math.min(currentRadius * 1.5, filterCriteria.features.maxRadiusExpansion);
+        
+        if (triedRadii.has(currentRadius)) break;
+        triedRadii.add(currentRadius);
+        
+        console.log(`🔄 Intentando con radio de ${currentRadius}m...`);
+        
+        try {
+          const expandedResults = await searchAgencies(
+            userLocation,
+            query.originalQuery,
+            currentRadius
+          );
+          
+          // Agregar solo agencias nuevas
+          const existingIds = new Set(nearbyAgencies.map(a => a.placeId));
+          const newAgencies = expandedResults.filter(a => !existingIds.has(a.placeId));
+          nearbyAgencies.push(...newAgencies);
+          
+          console.log(`✅ Encontradas ${newAgencies.length} agencias adicionales (total: ${nearbyAgencies.length})`);
+        } catch (error) {
+          console.warn(`⚠️ Error expandiendo búsqueda:`, error);
+          break;
+        }
+      }
+    }
     
     if (nearbyAgencies.length === 0) {
       throw new Error('No se encontraron agencias automotrices cercanas');
@@ -79,23 +126,59 @@ export async function runAnalysisPipeline(
     
     console.log(`✅ Encontradas ${nearbyAgencies.length} agencias cercanas`);
     
-    // Paso 2: Filtrar y limitar agencias a procesar
-    const agenciesToProcess = nearbyAgencies
-      .filter(agency => agency.rating && agency.rating >= 3.0) // Filtro básico de calidad
-      .slice(0, PIPELINE_CONFIG.maxAgencies);
+    // Paso 2: FASE 1 - Validación rápida con reseñas relevantes
+    console.log('🔍 FASE 1: Validando negocios automotrices...');
+    const validatedAgencies: Agency[] = [];
+    const invalidAgencies: { agency: Agency; reason: string }[] = [];
+    const config = loadFilteringCriteria();
     
-    console.log(`🔍 Procesando ${agenciesToProcess.length} agencias seleccionadas`);
+    // Validar cada agencia
+    for (const agency of nearbyAgencies) {
+      // Aplicar filtro de rating primero
+      if (!agency.rating || agency.rating < ANALYSIS_CONFIG.pipeline.minRating) {
+        console.log(`⚠️ ${agency.name} - Rating bajo: ${agency.rating || 'N/A'}`);
+        continue;
+      }
+      
+      // FASE 1: Validación con reseñas relevantes
+      if (ANALYSIS_CONFIG.validation.enabled) {
+        const validationResult = await validateAgency(agency, enhancedValidator);
+        
+        if (validationResult.isValid && 
+            validationResult.confidence >= (config.validation?.minConfidenceToAnalyze || 70)) {
+          validatedAgencies.push(agency);
+          console.log(`✅ ${agency.name} - Validado (confianza: ${validationResult.confidence}%): ${validationResult.reason}`);
+        } else {
+          invalidAgencies.push({ agency, reason: validationResult.reason });
+          console.log(`❌ ${agency.name} - No automotriz (confianza: ${validationResult.confidence}%): ${validationResult.reason}`);
+        }
+      } else {
+        // Si la validación está deshabilitada, incluir todas
+        validatedAgencies.push(agency);
+      }
+      
+      // Limitar al máximo configurado
+      if (validatedAgencies.length >= PIPELINE_CONFIG.maxAgencies) {
+        break;
+      }
+    }
     
-    // Paso 3: Procesar cada agencia en paralelo (con límite de concurrencia)
+    console.log(`✅ FASE 1 completada: ${validatedAgencies.length} agencias validadas de ${nearbyAgencies.length}`);
+    if (invalidAgencies.length > 0) {
+      console.log(`⚠️ Se excluyeron ${invalidAgencies.length} negocios no automotrices`);
+    }
+    
+    // Paso 3: FASE 2 - Análisis completo de agencias validadas
+    console.log('📊 FASE 2: Analizando agencias validadas...');
     const results: AnalysisResult[] = [];
-    const batchSize = 3; // Procesar 3 agencias a la vez para evitar sobrecarga
+    const batchSize = ANALYSIS_CONFIG.pipeline.batchSize;
     
-    for (let i = 0; i < agenciesToProcess.length; i += batchSize) {
-      const batch = agenciesToProcess.slice(i, i + batchSize);
+    for (let i = 0; i < validatedAgencies.length; i += batchSize) {
+      const batch = validatedAgencies.slice(i, i + batchSize);
       
       const batchPromises = batch.map(agency => 
-        processAgency(agency, errors).catch(error => {
-          errors.push(`Error procesando ${agency.name}: ${error.message}`);
+        analyzeValidAgency(agency, userLocation, errors).catch(error => {
+          errors.push(`Error analizando ${agency.name}: ${error.message}`);
           return null;
         })
       );
@@ -109,14 +192,53 @@ export async function runAnalysisPipeline(
         }
       });
       
-      console.log(`✅ Procesado batch ${Math.ceil((i + batchSize) / batchSize)} de ${Math.ceil(agenciesToProcess.length / batchSize)}`);
+      console.log(`✅ Procesado batch ${Math.ceil((i + batchSize) / batchSize)} de ${Math.ceil(validatedAgencies.length / batchSize)}`);
+    }
+    
+    // Validación: Si no hay resultados exitosos, incluir agencias sin análisis completo
+    if (results.length === 0 && validatedAgencies.length > 0) {
+      console.warn('⚠️ Ninguna agencia procesada exitosamente. Incluyendo datos básicos...');
+      
+      // Incluir al menos las primeras 3 agencias con datos básicos
+      const basicResults = validatedAgencies.slice(0, 3).map(agency => {
+        const basicResult: AnalysisResult = {
+          agency,
+          trustAnalysis: {
+            trustScore: 50, // Score neutral por defecto
+            trustLevel: 'media' as const,
+            metrics: {
+              positiveReviewsPercent: 0,
+              fraudKeywordsCount: 0,
+              responseRate: 0,
+              ratingPattern: 'natural' as const
+            },
+            redFlags: ['Sin análisis completo disponible'],
+            greenFlags: []
+          },
+          reviews: [],
+          reviewsCount: 0,
+          distance: calculateDistance(
+            agency.location.lat,
+            agency.location.lng,
+            userLocation.lat || 19.4326,
+            userLocation.lng || -99.1332
+          ),
+          deepAnalysis: undefined,
+          timestamp: new Date()
+        };
+        
+        return basicResult;
+      });
+      
+      results.push(...basicResults);
+      errors.push('Análisis completo no disponible. Mostrando datos básicos.');
     }
     
     // Paso 4: Ordenar resultados por trust score
     const sortedResults = results.sort((a, b) => b.trustAnalysis.trustScore - a.trustAnalysis.trustScore);
     
     // Paso 5: Análisis profundo para top agencias (si está habilitado)
-    if (PIPELINE_CONFIG.deepAnalysisConfig.enabled) {
+    if (PIPELINE_CONFIG.deepAnalysisConfig.enabled && sortedResults.length > 0) {
       await addDeepAnalysisToTopAgencies(sortedResults, errors);
     }
     
@@ -139,7 +261,13 @@ export async function runAnalysisPipeline(
         totalWithReviews: results.filter(r => r.reviewsCount > 0).length,
         totalWithDeepAnalysis: results.filter(r => r.deepAnalysis).length,
         executionTimeMs: executionTime,
-        errors
+        errors,
+        totalValidated: validatedAgencies.length,
+        totalExcluded: invalidAgencies.length,
+        excludedBusinesses: invalidAgencies.slice(0, 5).map(item => ({
+          name: item.agency.name,
+          reason: item.reason
+        }))
       }
     };
     
@@ -152,59 +280,7 @@ export async function runAnalysisPipeline(
 /**
  * Procesa una agencia individual: reviews + trust analysis
  */
-async function processAgency(agency: Agency, errors: string[]): Promise<AnalysisResult | null> {
-  console.log(`🔄 Procesando agencia: ${agency.name}`);
-  
-  try {
-    // Obtener reviews completas de la agencia
-    let reviews: Review[] = [];
-    
-    if (PIPELINE_CONFIG.reviewsConfig.useQuickReviews) {
-      try {
-        reviews = await getQuickReviewsSync(agency.placeId);
-        console.log(`📝 Obtenidas ${reviews.length} reviews de ${agency.name}`);
-      } catch (error) {
-        console.error(`⚠️  Error obteniendo reviews de ${agency.name}:`, error);
-        errors.push(`Reviews no disponibles para ${agency.name}`);
-        
-        // Fallback: continuar sin reviews si está habilitado
-        if (!PIPELINE_CONFIG.reviewsConfig.fallbackToBasic) {
-          return null;
-        }
-      }
-    }
-    
-    // Análisis de confianza
-    const trustAnalysis = analyzeTrust(reviews);
-    
-    // Calcular distancia aproximada desde la ubicación del usuario
-    const distance = calculateDistance(
-      agency.location.lat,
-      agency.location.lng,
-      // Aquí usaríamos la ubicación del usuario, por ahora usamos CDMX como ejemplo
-      19.4326, // Lat CDMX
-      -99.1332  // Lng CDMX
-    );
-    
-    const result: AnalysisResult = {
-      agency,
-      trustAnalysis,
-      reviews,
-      reviewsCount: reviews.length,
-      distance,
-      deepAnalysis: undefined, // Se agregará después si es necesario
-      timestamp: new Date()
-    };
-    
-    console.log(`✅ ${agency.name} procesada: ${trustAnalysis.trustScore}/100 (${trustAnalysis.trustLevel})`);
-    
-    return result;
-    
-  } catch (error) {
-    console.error(`❌ Error procesando ${agency.name}:`, error);
-    return null;
-  }
-}
+// La función processAgency fue reemplazada por validateAgency y analyzeValidAgency
 
 /**
  * Agregar análisis profundo a las top agencias
@@ -213,8 +289,8 @@ async function addDeepAnalysisToTopAgencies(results: AnalysisResult[], errors: s
   console.log('🔎 Agregando análisis profundo a top agencias...');
   
   const topAgencies = results
-    .filter(r => r.trustAnalysis.trustScore >= PIPELINE_CONFIG.deepAnalysisConfig.minTrustScore)
-    .slice(0, 3); // Top 3 agencias
+    .filter(r => r.trustAnalysis.trustScore >= 60) // Score mínimo para análisis profundo
+    .slice(0, ANALYSIS_CONFIG.deepAnalysis.topAgenciesToAnalyze);
   
   if (topAgencies.length === 0) {
     console.log('⚠️  No hay agencias que califiquen para análisis profundo');
@@ -261,6 +337,129 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   const distance = R * c;
   
   return Math.round(distance * 100) / 100; // Redondear a 2 decimales
+}
+
+/**
+ * FASE 1: Validar si una agencia es automotriz usando reseñas relevantes
+ */
+async function validateAgency(
+  agency: Agency, 
+  enhancedValidator: EnhancedAgencyValidator
+): Promise<{ isValid: boolean; confidence: number; reason: string }> {
+  // Verificar caché primero
+  const config = loadFilteringCriteria();
+  const cacheKey = agency.placeId;
+  
+  if (config.validation?.cacheValidationResults) {
+    const cached = validationCache.get(cacheKey);
+    if (cached) {
+      const cacheAge = Date.now() - cached.timestamp;
+      const maxAge = (config.validation.validationCacheTTLHours || 24) * 60 * 60 * 1000;
+      
+      if (cacheAge < maxAge) {
+        console.log(`📋 Usando validación en caché para ${agency.name}`);
+        return { isValid: cached.isValid, confidence: cached.confidence, reason: 'Desde caché' };
+      }
+    }
+  }
+  
+  try {
+    // Obtener reseñas más relevantes para validación
+    const validationReviews = await getRelevantReviewsForValidation(
+      agency.placeId,
+      config.validation?.maxReviewsForValidation || 15
+    );
+    
+    if (validationReviews.length === 0) {
+      console.log(`⚠️ Sin reseñas para validar ${agency.name}`);
+      return { isValid: true, confidence: 50, reason: 'Sin reseñas disponibles' };
+    }
+    
+    // Validar con enhanced validator
+    const result = enhancedValidator.validateAgency(agency, validationReviews);
+    
+    // Guardar en caché
+    if (config.validation?.cacheValidationResults) {
+      validationCache.set(cacheKey, {
+        isValid: result.isValid,
+        confidence: result.confidence,
+        timestamp: Date.now()
+      });
+    }
+    
+    return {
+      isValid: result.isValid,
+      confidence: result.confidence,
+      reason: result.reason
+    };
+    
+  } catch (error) {
+    console.error(`❌ Error validando ${agency.name}:`, error);
+    // En caso de error, dar beneficio de la duda con baja confianza
+    return { isValid: true, confidence: 30, reason: 'Error en validación' };
+  }
+}
+
+/**
+ * FASE 2: Analizar agencia validada con todas las reseñas
+ */
+async function analyzeValidAgency(
+  agency: Agency,
+  userLocation: Location,
+  errors: string[]
+): Promise<AnalysisResult | null> {
+  console.log(`📊 Analizando agencia validada: ${agency.name}`);
+  
+  try {
+    // Obtener reseñas completas del último año
+    const config = loadFilteringCriteria();
+    const maxReviews = config.thresholds.maxReviewsToAnalyze || 100;
+    
+    const reviews = await getReviewsSync(
+      agency.placeId,
+      '1 year',
+      'newest',
+      maxReviews
+    );
+    
+    console.log(`📝 Obtenidas ${reviews.length} reseñas para análisis completo`);
+    
+    // Filtrar reviews inválidas
+    const validReviews = reviews.filter(review => {
+      return review && typeof review.rating === 'number' && 
+             review.rating >= 0 && review.rating <= 5;
+    });
+    
+    // Análisis de confianza
+    const trustAnalysis = analyzeTrust(validReviews);
+    
+    // Calcular distancia
+    const distance = calculateDistance(
+      agency.location.lat,
+      agency.location.lng,
+      userLocation.lat || 19.4326,
+      userLocation.lng || -99.1332
+    );
+    
+    const result: AnalysisResult = {
+      agency,
+      trustAnalysis,
+      reviews: validReviews,
+      reviewsCount: validReviews.length,
+      distance,
+      deepAnalysis: undefined,
+      timestamp: new Date()
+    };
+    
+    console.log(`✅ ${agency.name} analizada: ${trustAnalysis.trustScore}/100 (${trustAnalysis.trustLevel})`);
+    
+    return result;
+    
+  } catch (error) {
+    console.error(`❌ Error analizando ${agency.name}:`, error);
+    errors.push(`Error analizando ${agency.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return null;
+  }
 }
 
 /**
