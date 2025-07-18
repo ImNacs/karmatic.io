@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * @fileoverview Search History component for VerticalSidebar
  * @module components/features/sidebar/SearchHistory
