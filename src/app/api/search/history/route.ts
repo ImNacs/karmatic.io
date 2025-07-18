@@ -26,12 +26,21 @@ export async function GET(request: NextRequest) {
       dbUserId = user?.id
     }
     
-    // Call the SQL function to get search history
-    const { data: searches, error } = await supabase.rpc('get_search_history', {
-      p_user_id: dbUserId,
-      p_session_id: !dbUserId ? sessionId : null,
-      p_include_deleted: false
-    })
+    // Get search history from conversations table
+    let query = supabase
+      .from('conversations')
+      .select('*')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    
+    if (dbUserId) {
+      query = query.eq('user_id', dbUserId)
+    } else if (sessionId) {
+      query = query.eq('session_id', sessionId)
+    }
+    
+    const { data: conversations, error } = await query
     
     if (error) {
       console.error('Error fetching search history:', error)
@@ -43,13 +52,16 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Transform data to match existing UI format
-    const transformedSearches = (searches || []).map((search: any) => ({
-      id: search.id,
-      location: search.location || '',
-      query: search.query || null,
-      createdAt: search.created_at
-    }))
+    // Transform conversations to match existing UI format
+    const transformedSearches = (conversations || []).map((conv: any) => {
+      const metadata = conv.metadata || {}
+      return {
+        id: conv.id,
+        location: metadata.location || '',
+        query: metadata.query || null,
+        createdAt: conv.created_at
+      }
+    })
     
     // Group by date using existing function
     const grouped = groupSearchesByDate(transformedSearches)
