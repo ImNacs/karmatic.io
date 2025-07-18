@@ -30,7 +30,7 @@ const ENDPOINT_CONFIG = {
  * Interfaz para el request body
  */
 interface AnalyzeRequest {
-  query: string;
+  query?: string | null;  // Query es opcional
   location: {
     lat: number;
     lng: number;
@@ -49,13 +49,15 @@ interface AnalyzeRequest {
  * Función para validar el request
  */
 function validateRequest(body: any): { isValid: boolean; error?: string } {
-  // Validar query
-  if (!body.query || typeof body.query !== 'string') {
-    return { isValid: false, error: 'Query es requerido y debe ser string' };
-  }
-  
-  if (body.query.length > ENDPOINT_CONFIG.maxQueryLength) {
-    return { isValid: false, error: `Query demasiado largo (max ${ENDPOINT_CONFIG.maxQueryLength} caracteres)` };
+  // Validar query si existe
+  if (body.query !== null && body.query !== undefined) {
+    if (typeof body.query !== 'string') {
+      return { isValid: false, error: 'Query debe ser string o null' };
+    }
+    
+    if (body.query.length > ENDPOINT_CONFIG.maxQueryLength) {
+      return { isValid: false, error: `Query demasiado largo (max ${ENDPOINT_CONFIG.maxQueryLength} caracteres)` };
+    }
   }
   
   // Validar location
@@ -142,7 +144,7 @@ export async function POST(request: NextRequest) {
     
     // Parsear query del usuario
     console.log('🔍 Parseando query del usuario...');
-    const parsedQuery: ParsedQuery = parseQuery(body.query, userLocation);
+    const parsedQuery: ParsedQuery = parseQuery(body.query || '', userLocation);
     
     console.log('✅ Query parseada:', {
       parseMethod: parsedQuery.parseMethod,
@@ -183,9 +185,14 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('❌ Error en análisis:', error);
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
     
     // Determinar tipo de error
     if (error instanceof Error) {
+      // Log detallado del error
+      console.error('Tipo de error:', error.name);
+      console.error('Mensaje de error:', error.message);
+      
       if (error.message.includes('API')) {
         return createErrorResponse('API_ERROR', 'Error en API externa', 502);
       }

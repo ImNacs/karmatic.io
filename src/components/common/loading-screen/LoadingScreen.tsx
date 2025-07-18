@@ -7,6 +7,8 @@ interface LoadingScreenProps {
   title?: string
   subtitle?: string
   type?: "search" | "analysis"
+  progress?: number
+  currentStep?: string
 }
 
 /**
@@ -29,7 +31,9 @@ interface LoadingScreenProps {
 export function LoadingScreen({ 
   title = "Buscando agencias...", 
   subtitle = "Estamos analizando las mejores opciones cerca de ti",
-  type = "search" 
+  type = "search",
+  progress,
+  currentStep
 }: LoadingScreenProps) {
   const icons = type === "search" ? [FiSearch, FiMapPin, FiTarget] : [FiTarget, FiSearch, FiMapPin]
 
@@ -84,6 +88,42 @@ export function LoadingScreen({
         >
           {subtitle}
         </motion.p>
+
+        {/* Progress bar para análisis */}
+        {type === "analysis" && progress !== undefined && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mb-4"
+          >
+            <div className="w-full bg-muted rounded-full h-2">
+              <motion.div
+                className="bg-primary h-2 rounded-full"
+                initial={{ width: "0%" }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {progress}% completado
+            </p>
+          </motion.div>
+        )}
+
+        {/* Current step para análisis */}
+        {type === "analysis" && currentStep && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="mb-4"
+          >
+            <p className="text-sm font-medium text-primary">
+              {currentStep}
+            </p>
+          </motion.div>
+        )}
 
         {/* Loading dots and message */}
         <motion.div

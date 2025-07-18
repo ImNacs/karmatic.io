@@ -55,8 +55,8 @@ export async function POST(request: Request) {
     const success = await migrateSessionStorageToDatabase(
       body.searchId,
       chatMessages,
-      userId,
-      sessionId,
+      userId ?? undefined,
+      sessionId ?? undefined,
       body.context
     )
 

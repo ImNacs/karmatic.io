@@ -19,6 +19,7 @@ import { AIAssistantProvider } from "@/contexts/AIAssistantContext"
 import { motion } from "motion/react"
 import { UserButton } from "@clerk/nextjs"
 import type { Agency } from "@/types/agency"
+import { transformStoredDataToAgency, validateAndNormalizeStoredData, sortAgenciesByTrust } from "@/lib/karmatic/data-transformer"
 
 interface ExplorerResultsProps {
   searchId: string
@@ -51,7 +52,8 @@ export default function ExplorerResultsMobile({
   
   const router = useRouter()
   
-  // Mock data for when n8n is not configured
+  // Mock data comentado - no usar en producción
+  /*
   const mockAgencies: Agency[] = [
     {
       id: "1",
@@ -120,37 +122,22 @@ export default function ExplorerResultsMobile({
       }
     }
   ]
+  */
 
   // Transform agencies from API format to local format
-  const agencies: Agency[] = initialAgencies.length > 0 
-    ? initialAgencies.map((agency: any) => ({
-        id: agency.id,
-        name: agency.name,
-        rating: agency.rating || 0,
-        reviewCount: agency.userRatingsTotal || 0,
-        address: agency.address,
-        phone: agency.phoneNumber || '',
-        hours: agency.openingHours?.[0] || 'No disponible',
-        distance: agency.distance || '',
-        coordinates: { lat: agency.latitude, lng: agency.longitude },
-        isHighRated: (agency.rating || 0) >= 4.0,
-        specialties: [],
-        website: agency.website,
-        description: '',
-        images: [],
-        recentReviews: agency.reviews?.slice(0, 3).map((review: any, index: number) => ({
-          id: review.time?.toString() || `review-${agency.id}-${index}`,
-          author: review.author_name,
-          rating: review.rating,
-          comment: review.text,
-          date: review.relative_time_description
-        })) || [],
-        placeId: agency.placeId,
-        openingHours: agency.openingHours,
-        googleMapsUrl: agency.googleMapsUrl,
-        businessStatus: agency.businessStatus,
-      }))
-    : mockAgencies
+  const transformedAgencies: Agency[] = initialAgencies.length > 0 
+    ? initialAgencies.map((agency: any) => {
+        // Normalizar datos para compatibilidad con versiones anteriores
+        const normalizedAgency = validateAndNormalizeStoredData(agency)
+        // Transformar usando la función especializada
+        return transformStoredDataToAgency(normalizedAgency)
+      })
+    : [] // No usar mock data en producción
+
+  // Ordenar por trust score (confianza) si está disponible
+  const agencies: Agency[] = transformedAgencies.some(agency => agency.trustScore)
+    ? sortAgenciesByTrust(transformedAgencies)
+    : transformedAgencies
 
   // Device detection
   useEffect(() => {

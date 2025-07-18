@@ -81,6 +81,9 @@ function countFraudKeywords(reviews: Review[]): number {
   let fraudCount = 0;
   
   reviews.forEach(review => {
+    // Validar que el texto existe antes de procesarlo
+    if (!review.text) return;
+    
     const reviewText = review.text.toLowerCase();
     
     FRAUD_KEYWORDS.forEach(keyword => {
@@ -100,6 +103,9 @@ function countTrustKeywords(reviews: Review[]): number {
   let trustCount = 0;
   
   reviews.forEach(review => {
+    // Validar que el texto existe antes de procesarlo
+    if (!review.text) return;
+    
     const reviewText = review.text.toLowerCase();
     
     TRUST_KEYWORDS.forEach(keyword => {

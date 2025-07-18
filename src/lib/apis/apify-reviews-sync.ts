@@ -36,7 +36,8 @@ interface ApifyReviewResult {
 export async function getReviewsSync(
   placeId: string,
   reviewsStartDate: string = '1 year',
-  sort: 'newest' | 'oldest' | 'highest' | 'lowest' = 'newest'
+  sort: 'newest' | 'mostRelevant' | 'highestRanking' | 'lowestRanking' = 'newest',
+  maxReviews?: number
 ): Promise<Review[]> {
   
   if (!APIFY_API_TOKEN) {
@@ -52,7 +53,8 @@ export async function getReviewsSync(
       reviewsOrigin: 'google',
       reviewsSort: sort,
       reviewsStartDate: reviewsStartDate,
-      language: 'es-419'
+      language: 'es-419',
+      ...(maxReviews && { maxReviews })
     };
     
     const response = await fetch(APIFY_SYNC_URL, {
@@ -75,7 +77,7 @@ export async function getReviewsSync(
       id: item.reviewId || `${item.reviewerName}-${item.publishedAtDate}`,
       author: item.reviewerName,
       rating: item.stars,
-      text: item.text,
+      text: item.text || '', // Asegurar que siempre haya un string (vacío si no hay texto)
       date: item.publishedAtDate,
       response: item.responseFromOwner ? {
         text: item.responseFromOwner.text,
@@ -106,6 +108,28 @@ export async function getQuickReviewsSync(placeId: string): Promise<Review[]> {
   } catch (error) {
     console.error('❌ Error obteniendo reviews rápidas:', error);
     // Retornar array vacío en caso de error para no bloquear el flujo
+    return [];
+  }
+}
+
+/**
+ * Obtiene las reseñas más relevantes para validación
+ */
+export async function getRelevantReviewsForValidation(
+  placeId: string, 
+  maxReviews: number = 15
+): Promise<Review[]> {
+  console.log(`🎯 Obteniendo ${maxReviews} reseñas más relevantes para validación...`);
+  
+  try {
+    return await getReviewsSync(
+      placeId, 
+      '5 years', // Más tiempo para asegurar suficientes reseñas
+      'mostRelevant',
+      maxReviews
+    );
+  } catch (error) {
+    console.error('❌ Error obteniendo reseñas relevantes:', error);
     return [];
   }
 }

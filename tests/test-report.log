@@ -1,0 +1,252 @@
+
+Running 15 tests using 4 workers
+
+  ✘  1 [firefox] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations (3ms)
+  ✘  5 [firefox] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores (2ms)
+  ✘  3 [chromium] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores (7ms)
+  ✘  2 [chromium] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil (2ms)
+  ✘  4 [chromium] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations (4ms)
+  ✘  6 [firefox] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil (3ms)
+  ✘  7 [webkit] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations (3ms)
+  ✘  8 [webkit] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores (4ms)
+  ✘  9 [webkit] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil (3ms)
+  ✘  10 [Mobile Chrome] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations (4ms)
+  ✘  12 [Mobile Safari] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations (2ms)
+  ✘  11 [Mobile Chrome] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil (4ms)
+  ✘  13 [Mobile Chrome] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores (3ms)
+  ✘  14 [Mobile Safari] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores (3ms)
+  ✘  15 [Mobile Safari] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil (2ms)
+
+
+  1) [chromium] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+    [2m  - <launching> /home/nacs/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-ozeNLc --remote-debugging-pipe --no-startup-window[22m
+    [2m  - <launched> pid=2143278[22m
+    [2m  - [pid=2143278][err] [2143278:2143278:0717/093059.650113:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY[22m
+    [2m  - [pid=2143278][err] [2143278:2143278:0717/093059.650659:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.[22m
+
+
+  2) [chromium] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+    [2m  - <launching> /home/nacs/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-GzcCuu --remote-debugging-pipe --no-startup-window[22m
+    [2m  - <launched> pid=2143276[22m
+    [2m  - [pid=2143276][err] [2143276:2143276:0717/093059.650121:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY[22m
+    [2m  - [pid=2143276][err] [2143276:2143276:0717/093059.650658:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.[22m
+
+
+  3) [chromium] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+    [2m  - <launching> /home/nacs/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-YdQxza --remote-debugging-pipe --no-startup-window[22m
+    [2m  - <launched> pid=2143277[22m
+    [2m  - [pid=2143277][err] [2143277:2143277:0717/093059.650120:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY[22m
+    [2m  - [pid=2143277][err] [2143277:2143277:0717/093059.650672:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.[22m
+
+
+  4) [firefox] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations 
+
+    Error: browserType.launch: Executable doesn't exist at /home/nacs/.cache/ms-playwright/firefox-1488/firefox/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+
+  5) [firefox] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores 
+
+    Error: browserType.launch: Executable doesn't exist at /home/nacs/.cache/ms-playwright/firefox-1488/firefox/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+
+  6) [firefox] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil 
+
+    Error: browserType.launch: Executable doesn't exist at /home/nacs/.cache/ms-playwright/firefox-1488/firefox/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+
+  7) [webkit] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations 
+
+    Error: browserType.launch: Executable doesn't exist at /home/nacs/.cache/ms-playwright/webkit-2182/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+
+  8) [webkit] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores 
+
+    Error: browserType.launch: Executable doesn't exist at /home/nacs/.cache/ms-playwright/webkit-2182/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+
+  9) [webkit] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil 
+
+    Error: browserType.launch: Executable doesn't exist at /home/nacs/.cache/ms-playwright/webkit-2182/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+
+  10) [Mobile Chrome] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+    [2m  - <launching> /home/nacs/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-xKCMtQ --remote-debugging-pipe --no-startup-window[22m
+    [2m  - <launched> pid=2143692[22m
+    [2m  - [pid=2143692][err] [2143692:2143692:0717/093100.963883:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY[22m
+    [2m  - [pid=2143692][err] [2143692:2143692:0717/093100.963912:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.[22m
+
+
+  11) [Mobile Chrome] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+    [2m  - <launching> /home/nacs/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-vmfNKp --remote-debugging-pipe --no-startup-window[22m
+    [2m  - <launched> pid=2143738[22m
+    [2m  - [pid=2143738][err] [2143738:2143738:0717/093101.376362:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY[22m
+    [2m  - [pid=2143738][err] [2143738:2143738:0717/093101.376392:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.[22m
+
+
+  12) [Mobile Chrome] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil 
+
+    Error: browserType.launch: Target page, context or browser has been closed
+    Browser logs:
+
+    ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like you launched a headed browser without having a XServer running.                     ║
+    ║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+    ║                                                                                                ║
+    ║ <3 Playwright Team                                                                             ║
+    ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+    Call log:
+    [2m  - <launching> /home/nacs/.cache/ms-playwright/chromium-1179/chrome-linux/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AutoExpandDetailsElement,AvoidUnnecessaryBeforeUnloadCheckSync,CertificateTransparencyComponentUpdater,DestroyProfileOnBrowserClose,DialMediaRouteProvider,ExtensionManifestV2Disabled,GlobalMediaControls,HttpsUpgrades,ImprovedCookieControls,LazyFrameLoading,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-HyzNWB --remote-debugging-pipe --no-startup-window[22m
+    [2m  - <launched> pid=2143727[22m
+    [2m  - [pid=2143727][err] [2143727:2143727:0717/093101.323894:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:249] Missing X server or $DISPLAY[22m
+    [2m  - [pid=2143727][err] [2143727:2143727:0717/093101.323930:ERROR:ui/aura/env.cc:257] The platform failed to initialize.  Exiting.[22m
+
+
+  13) [Mobile Safari] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations 
+
+    Error: browserType.launch: Executable doesn't exist at /home/nacs/.cache/ms-playwright/webkit-2182/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+
+  14) [Mobile Safari] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores 
+
+    Error: browserType.launch: Executable doesn't exist at /home/nacs/.cache/ms-playwright/webkit-2182/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+
+  15) [Mobile Safari] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil 
+
+    Error: browserType.launch: Executable doesn't exist at /home/nacs/.cache/ms-playwright/webkit-2182/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+
+  15 failed
+    [chromium] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations 
+    [chromium] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores 
+    [chromium] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil 
+    [firefox] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations 
+    [firefox] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores 
+    [firefox] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil 
+    [webkit] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations 
+    [webkit] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores 
+    [webkit] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil 
+    [Mobile Chrome] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations 
+    [Mobile Chrome] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores 
+    [Mobile Chrome] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil 
+    [Mobile Safari] › tests/e2e/full-system-test.spec.ts:20:7 › Sistema Karmatic - Prueba E2E Completa › flujo completo: búsqueda → análisis → chat con citations 
+    [Mobile Safari] › tests/e2e/full-system-test.spec.ts:159:7 › Sistema Karmatic - Prueba E2E Completa › verificar manejo de errores 
+    [Mobile Safari] › tests/e2e/full-system-test.spec.ts:186:7 › Sistema Karmatic - Prueba E2E Completa › verificar accesibilidad móvil 

@@ -86,8 +86,8 @@ export async function GET(
     // Load the conversation
     const messages = await loadConversationFromDatabase(
       conversationId,
-      dbUserId,
-      sessionId
+      dbUserId ?? undefined,
+      sessionId ?? undefined
     )
 
     return Response.json({

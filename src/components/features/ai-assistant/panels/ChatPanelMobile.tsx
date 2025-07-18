@@ -7,10 +7,14 @@ import { motion, AnimatePresence } from "motion/react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { CitationText, SourcesPanel } from "@/components/chat"
+import type { Citation } from "@/types/citations"
 
 export function ChatPanelMobile() {
   const { messages, sendMessage, isTyping } = useAIAssistant()
   const [input, setInput] = useState("")
+  const [isSourcesPanelOpen, setSourcesPanelOpen] = useState(false)
+  const [currentSources, setCurrentSources] = useState<Citation[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -50,6 +54,21 @@ export function ChatPanelMobile() {
       hour: "2-digit",
       minute: "2-digit"
     }).format(date)
+  }
+  
+  /**
+   * Manejar click en citation
+   */
+  const handleCitationClick = (index: number, sources: Citation[]) => {
+    setCurrentSources(sources)
+    setSourcesPanelOpen(true)
+  }
+  
+  /**
+   * Extraer sources de un mensaje
+   */
+  const getMessageSources = (message: any): Citation[] => {
+    return message._sources || []
   }
 
   return (
@@ -101,8 +120,17 @@ export function ChatPanelMobile() {
                       {message.content.split('\n').map((paragraph, pIndex) => {
                         if (paragraph.trim() === '') return <br key={pIndex} />
                         
-                        // Regular paragraph
-                        return <p key={pIndex} className="mb-3">{paragraph}</p>
+                        // Regular paragraph con citations
+                        const sources = getMessageSources(message)
+                        return (
+                          <p key={pIndex} className="mb-3">
+                            <CitationText 
+                              text={paragraph}
+                              citations={sources}
+                              onCitationClick={(idx) => handleCitationClick(idx, sources)}
+                            />
+                          </p>
+                        )
                       })}
                     </div>
                   </div>
@@ -170,6 +198,13 @@ export function ChatPanelMobile() {
           </button>
         </div>
       </div>
+      
+      {/* Panel de fuentes - Bottom Sheet para móvil */}
+      <SourcesPanel 
+        sources={currentSources}
+        isOpen={isSourcesPanelOpen}
+        onClose={() => setSourcesPanelOpen(false)}
+      />
     </div>
   )
 }

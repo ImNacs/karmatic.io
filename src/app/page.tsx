@@ -16,6 +16,7 @@ import { useSearchLimit } from "@/components/features/search/hooks/useSearchLimi
 import { trackEvent } from "@/lib/gtm/gtm"
 import { useGooglePlaces } from "@/lib/google-places"
 import { useSearchHistory } from "@/contexts/SearchHistoryContext"
+import { transformAnalysisResponseToStoredFormat } from "@/lib/karmatic/data-transformer"
 
 /**
  * Home page component with agency search functionality
@@ -73,11 +74,49 @@ export default function Home() {
       // Execute search in background
       let searchResults
       
-      // TODO: Implement search with Mastra
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      searchResults = {
-        success: true,
-        agencies: [] // Will use mock data in explorer
+      try {
+        // Realizar análisis con Core Trust Engine
+        const analysisResponse = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: data.query || null,
+            location: {
+              lat: coordinates?.lat || 0,
+              lng: coordinates?.lng || 0,
+              address: data.location
+            }
+          })
+        })
+        
+        if (!analysisResponse.ok) {
+          throw new Error('Error en análisis de confianza')
+        }
+        
+        const analysisData = await analysisResponse.json()
+        
+        // Transformar respuesta a formato compatible con BD
+        const storedFormat = transformAnalysisResponseToStoredFormat(
+          analysisData,
+          data.query || null,
+          data.location
+        )
+        
+        searchResults = {
+          success: true,
+          agencies: storedFormat.agencies,
+          metadata: storedFormat.analysisMetadata
+        }
+        
+      } catch (error) {
+        console.error('Error en análisis:', error)
+        
+        // Fallback a búsqueda básica si falla el análisis
+        searchResults = {
+          success: false,
+          agencies: [],
+          error: 'Error en análisis de confianza'
+        }
       }
       
       // Save search to database
@@ -89,7 +128,8 @@ export default function Home() {
           query: data.query,
           placeId: data.placeId,
           coordinates,
-          results: searchResults.agencies || []
+          results: searchResults.agencies || [],
+          metadata: searchResults.metadata
         })
       })
       
@@ -109,10 +149,22 @@ export default function Home() {
       
     } catch (error) {
       console.error('Error processing search:', error)
-      toast.error('Error al procesar la búsqueda')
+      
+      // Mostrar error específico según el tipo
+      if (error instanceof Error) {
+        if (error.message.includes('análisis')) {
+          toast.error('Error en análisis de confianza. Intenta más tarde.')
+        } else if (error.message.includes('guardar')) {
+          toast.error('Error al guardar la búsqueda. Intenta de nuevo.')
+        } else {
+          toast.error('Error al procesar la búsqueda')
+        }
+      } else {
+        toast.error('Error inesperado al procesar la búsqueda')
+      }
+      
       setIsLoading(false)
-      // Navigate back to home on error
-      router.push('/')
+      // No navegar automáticamente en error, dejar que usuario reinicie
     }
   }
 
@@ -140,9 +192,9 @@ export default function Home() {
 
       {isLoading && (
         <LoadingScreen
-          type="search"
-          title="Buscando agencias..."
-          subtitle="Estamos buscando las mejores agencias cerca de ti"
+          type="analysis"
+          title="Analizando agencias..."
+          subtitle="Realizando análisis de confianza y reputación (2-3 minutos)"
         />
       )}
     </div>

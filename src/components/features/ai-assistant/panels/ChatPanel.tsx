@@ -11,6 +11,8 @@ import { Send, Sparkles, User, Bot, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAIAssistant } from '@/contexts/AIAssistantContext'
 import { Input } from '@/components/ui/input'
+import { CitationText, SourcesPanel } from '@/components/chat'
+import type { Citation } from '@/types/citations'
 
 /**
  * Desktop chat panel for AI assistant interactions
@@ -40,6 +42,8 @@ export function ChatPanel() {
   
   const [inputValue, setInputValue] = useState('')
   const [isInputFocused, setIsInputFocused] = useState(false)
+  const [isSourcesPanelOpen, setSourcesPanelOpen] = useState(false)
+  const [currentSources, setCurrentSources] = useState<Citation[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   
@@ -66,6 +70,24 @@ export function ChatPanel() {
       e.preventDefault()
       handleSend()
     }
+  }
+  
+  /**
+   * Manejar click en citation
+   */
+  const handleCitationClick = (index: number, sources: Citation[]) => {
+    setCurrentSources(sources)
+    setSourcesPanelOpen(true)
+  }
+  
+  /**
+   * Extraer sources de un mensaje
+   * Por ahora simulamos sources, después vendrán del backend
+   */
+  const getMessageSources = (message: any): Citation[] => {
+    // TODO: Extraer _sources del mensaje cuando venga del backend
+    // Por ahora retornamos un array vacío
+    return message._sources || []
   }
   
   
@@ -133,8 +155,17 @@ export function ChatPanel() {
                           )
                         }
                         
-                        // Regular paragraph
-                        return <p key={pIndex} className="mb-4">{paragraph}</p>
+                        // Regular paragraph con citations
+                        const sources = getMessageSources(message)
+                        return (
+                          <p key={pIndex} className="mb-4">
+                            <CitationText 
+                              text={paragraph}
+                              citations={sources}
+                              onCitationClick={(idx) => handleCitationClick(idx, sources)}
+                            />
+                          </p>
+                        )
                       })}
                     </div>
                   </div>
@@ -207,6 +238,13 @@ export function ChatPanel() {
         </div>
         
       </div>
+      
+      {/* Panel de fuentes */}
+      <SourcesPanel 
+        sources={currentSources}
+        isOpen={isSourcesPanelOpen}
+        onClose={() => setSourcesPanelOpen(false)}
+      />
     </div>
   )
 }
