@@ -5,8 +5,6 @@ import { prisma } from '@/lib/prisma'
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth()
-    console.log('🔍 Search history API - userId:', userId)
-    
     let conversations = []
     
     if (userId) {
@@ -14,7 +12,6 @@ export async function GET(request: NextRequest) {
       const user = await prisma.user.findUnique({
         where: { clerkUserId: userId }
       })
-      console.log('🔍 Search history API - user found:', user?.id)
       
       if (user) {
         conversations = await prisma.conversation.findMany({
@@ -31,9 +28,10 @@ export async function GET(request: NextRequest) {
             createdAt: true
           }
         })
-        console.log('🔍 Search history API - conversations found:', conversations.length)
-        console.log('🔍 First conversation:', conversations[0])
       }
+    } else {
+      // Para usuarios no autenticados, no mostrar historial
+      console.log('🔍 No userId, returning empty history')
     }
     
     // Transform conversations to search history format
@@ -66,10 +64,6 @@ export async function GET(request: NextRequest) {
     // Group by date
     const grouped = groupSearchesByDate(searchHistory)
     
-    console.log('🔍 Search history API - final result:', {
-      total: searchHistory.length,
-      groupedCount: grouped.length
-    })
     
     return NextResponse.json({
       searches: grouped,

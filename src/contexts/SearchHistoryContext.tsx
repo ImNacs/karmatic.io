@@ -128,6 +128,7 @@ const fetcher = async (url: string) => {
     }
     
     console.log('Fetched search history:', data)
+    // data.searches es un array de grupos: [{label: 'Hoy', searches: [...]}, ...]
     return data.searches || []
   } catch (error) {
     console.error('Error in fetcher:', error)
