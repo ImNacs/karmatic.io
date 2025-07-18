@@ -22,8 +22,6 @@ export const MapMarkers: React.FC<MapMarkersProps> = ({
   onMarkerClick, 
   searchLocation 
 }) => {
-  // Debug: Log agencies in MapMarkers
-  console.log('🗺️ MapMarkers - agencies:', agencies.length, agencies)
   const map = useMap()
   const clustererRef = useRef<MarkerClusterer | null>(null)
 
