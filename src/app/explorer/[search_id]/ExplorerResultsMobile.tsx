@@ -191,6 +191,9 @@ export default function ExplorerResultsMobile({
   }
 
   const selectedAgenciesData = agencies.filter(agency => selectedForAnalysis.includes(agency.id))
+  
+  // Debug: Log agencies data
+  console.log('🔍 ExplorerResultsMobile - agencies:', agencies.length, agencies)
 
   // Mobile header component (Perplexity style)
   const MobileHeader = () => (
