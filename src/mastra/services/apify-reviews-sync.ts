@@ -4,6 +4,7 @@
  */
 
 import { Review } from '../types';
+import { REVIEW_ANALYSIS_CONFIG } from '../config/analysis.config';
 
 // Configuración de Apify
 const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
@@ -35,7 +36,7 @@ interface ApifyReviewResult {
  */
 export async function getReviewsSync(
   placeId: string,
-  reviewsStartDate: string = '1 year',
+  reviewsStartDate?: string,
   sort: 'newest' | 'mostRelevant' | 'highestRanking' | 'lowestRanking' = 'newest',
   maxReviews?: number
 ): Promise<Review[]> {
@@ -52,7 +53,7 @@ export async function getReviewsSync(
       placeIds: [placeId],
       reviewsOrigin: 'google',
       reviewsSort: sort,
-      reviewsStartDate: reviewsStartDate,
+      reviewsStartDate: reviewsStartDate || REVIEW_ANALYSIS_CONFIG.startDate,
       language: 'es-419',
       ...(maxReviews && { maxReviews })
     };
@@ -95,37 +96,21 @@ export async function getReviewsSync(
   }
 }
 
-/**
- * Función rápida para obtener reviews limitadas (para respuesta rápida)
- */
-export async function getQuickReviewsSync(placeId: string): Promise<Review[]> {
-  console.log('⚡ Obteniendo reviews rápidas sincrónicas...');
-  
-  try {
-    // Usar período más corto para respuesta más rápida
-    return await getReviewsSync(placeId, '6 months', 'newest');
-    
-  } catch (error) {
-    console.error('❌ Error obteniendo reviews rápidas:', error);
-    // Retornar array vacío en caso de error para no bloquear el flujo
-    return [];
-  }
-}
 
 /**
  * Obtiene las reseñas más relevantes para validación
  */
 export async function getRelevantReviewsForValidation(
   placeId: string, 
-  maxReviews: number = 15
+  maxReviews?: number
 ): Promise<Review[]> {
-  console.log(`🎯 Obteniendo ${maxReviews} reseñas más relevantes para validación...`);
+  console.log(`🎯 Obteniendo reseñas para validación...`);
   
   try {
     return await getReviewsSync(
       placeId, 
-      '5 years', // Más tiempo para asegurar suficientes reseñas
-      'mostRelevant',
+      undefined, // Usar configuración por defecto
+      'mostRelevant', // Para validación queremos las más relevantes
       maxReviews
     );
   } catch (error) {

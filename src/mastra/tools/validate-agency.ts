@@ -10,7 +10,7 @@ import { createTool } from '@mastra/core'
 import { z } from 'zod'
 import { createOpenAI } from '@ai-sdk/openai'
 import { generateText } from 'ai'
-import { ANALYSIS_CONFIG } from '../config/analysis.config'
+import { AGENCY_VALIDATION_CONFIG } from '../config/analysis.config'
 
 // Cliente OpenRouter para DeepSeek
 const openrouter = createOpenAI({
@@ -64,62 +64,38 @@ export const validateAgency = createTool({
     const { agencyName, placeId, rating, totalReviews, reviews } = context;
     console.log(`🔍 Validando agencia: ${agencyName}`);
     
-    // Validación rápida por nombre
-    const quickResult = quickValidateByName(agencyName);
-    if (quickResult) {
-      console.log(`✅ Validación rápida: ${quickResult.reason}`);
+    // Si no hay suficientes reseñas, descartar
+    if (reviews.length < AGENCY_VALIDATION_CONFIG.minReviewsRequired) {
+      console.log('❌ Descartado por pocas reseñas');
       return {
-        ...quickResult,
-        _source: 'validation_analysis' as const
-      };
-    }
-    
-    // Si no hay suficientes reseñas, retornar con baja confianza
-    if (reviews.length < ANALYSIS_CONFIG.validation.minReviewsForAnalysis) {
-      console.log('⚠️ Pocas reseñas para validación confiable');
-      return {
-        isAutomotiveAgency: true,
-        confidence: 30,
+        isAutomotiveAgency: false,
+        confidence: 100,
         category: 'otro',
-        reason: `Insuficientes reseñas para validación confiable (mínimo ${ANALYSIS_CONFIG.validation.minReviewsForAnalysis})`,
-        automotiveScore: 50,
-        excludedCategories: [],
+        reason: `Descartado: menos de ${AGENCY_VALIDATION_CONFIG.minReviewsRequired} reseñas`,
+        automotiveScore: 0,
+        excludedCategories: ['sin_reseñas_suficientes'],
         _source: 'validation_analysis' as const
       };
     }
     
     // Construir prompt para la IA
     const reviewTexts = reviews
-      .slice(0, ANALYSIS_CONFIG.validation.reviewsToAnalyze)
+      .slice(0, AGENCY_VALIDATION_CONFIG.reviewsToAnalyze)
       .map((r, i) => `Reseña ${i + 1} (${r.rating}⭐): ${r.text}`)
       .join('\n\n');
     
-    const prompt = `Analiza si "${agencyName}" es una agencia de autos legítima basándote en estas reseñas:
+    const prompt = `Analiza si "${agencyName}" es una agencia de autos basándote en las reseñas:
 
 ${reviewTexts}
 
-CRITERIOS DE INCLUSIÓN (✅):
-- Agencias que VENDEN autos nuevos o seminuevos
-- Concesionarios oficiales de marcas
-- Lotes de autos con venta directa
-- Agencias multimarca con inventario propio
-
-CRITERIOS DE EXCLUSIÓN (❌):
-- Talleres mecánicos (solo servicio)
-- Agencias de motocicletas
-- Renta de autos o leasing
-- Refaccionarias o autopartes
-- Car wash o detallado
-- Negocios no automotrices
-
-Responde en formato JSON:
+Responde SOLO en JSON:
 {
   "isAutomotiveAgency": boolean,
   "confidence": number (0-100),
   "category": "agencia_autos" | "motocicletas" | "renta" | "taller" | "otro",
-  "reason": "explicación breve en español",
+  "reason": "razón breve",
   "automotiveScore": number (0-100),
-  "excludedCategories": ["categorías detectadas excluidas"]
+  "excludedCategories": []
 }`;
     
     try {
@@ -161,55 +137,3 @@ Responde en formato JSON:
   }
 })
 
-/**
- * Validación rápida por nombre (sin IA)
- */
-function quickValidateByName(name: string): Omit<z.infer<typeof validateAgencyOutputSchema>, '_source'> | null {
-  const nameLower = name.toLowerCase();
-  
-  // Exclusiones obvias
-  const exclusions = [
-    { pattern: /\b(moto|motos|motocicleta|motocicletas)\b/i, category: 'motocicletas' as const },
-    { pattern: /\brent\s*(a|de)?\s*(car|auto|autos)\b/i, category: 'renta' as const },
-    { pattern: /\b(taller|mecánico|servicio|mecanica)\b/i, category: 'taller' as const },
-    { pattern: /\b(refaccion|autopart|parts)\b/i, category: 'otro' as const },
-    { pattern: /\b(car\s*wash|lavado|autolavado)\b/i, category: 'otro' as const }
-  ];
-  
-  for (const exclusion of exclusions) {
-    if (exclusion.pattern.test(nameLower)) {
-      return {
-        isAutomotiveAgency: false,
-        confidence: 90,
-        category: exclusion.category,
-        reason: `Excluido por nombre: ${exclusion.category}`,
-        automotiveScore: 0,
-        excludedCategories: [exclusion.category]
-      };
-    }
-  }
-  
-  // Inclusiones obvias
-  const autoBrands = [
-    'toyota', 'honda', 'nissan', 'mazda', 'ford', 'chevrolet',
-    'volkswagen', 'hyundai', 'kia', 'bmw', 'mercedes', 'audi'
-  ];
-  
-  const hasAutoBrand = autoBrands.some(brand => 
-    nameLower.includes(brand) && 
-    (nameLower.includes('agencia') || nameLower.includes('automotriz'))
-  );
-  
-  if (hasAutoBrand) {
-    return {
-      isAutomotiveAgency: true,
-      confidence: 85,
-      category: 'agencia_autos',
-      reason: 'Agencia de marca automotriz reconocida',
-      automotiveScore: 95,
-      excludedCategories: []
-    };
-  }
-  
-  return null;
-}

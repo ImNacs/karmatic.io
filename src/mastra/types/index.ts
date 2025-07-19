@@ -48,7 +48,6 @@ export interface Agency {
   priceLevel?: number;
   photos?: string[];
   // Campos calculados
-  relevanceScore?: number; // Score de relevancia para el query del usuario
   distanceKm?: number; // Distancia en kilómetros desde la ubicación del usuario
   // Campos temporales
   hours?: string;
@@ -105,6 +104,12 @@ export interface AnalysisResult {
   trustAnalysis: TrustAnalysis;
   reviewsCount: number;
   distance: number; // Distancia en km desde la ubicación del usuario
+  reviewMetrics?: {
+    karmaScore: number | null;
+    reviewFrequency: string | null;
+    avgReviewsPerMonth: number | null;
+    daysSinceLastReview: number | null;
+  };
   deepAnalysis?: {
     inventoryUrl?: string;
     socialMedia?: {

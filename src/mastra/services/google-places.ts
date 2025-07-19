@@ -4,7 +4,7 @@
  */
 
 import { Agency, Location } from '../types';
-import { ANALYSIS_CONFIG } from '../config/analysis.config';
+import { SEARCH_CONFIG, AGENCY_FILTERS } from '../config/analysis.config';
 
 // Configuración de la API
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
@@ -24,14 +24,12 @@ export async function searchAgencies(
     throw new Error('GOOGLE_PLACES_API_KEY no configurada');
   }
   
-  const config = ANALYSIS_CONFIG.search;
-  
   // NO USAR KEYWORD - El query es para análisis, no para filtrar
   // Dejar que Google devuelva TODAS las agencias en el radio
   
   console.log('🔍 Búsqueda con Nearby Search API (radio estricto):', {
     type: 'car_dealer',
-    radius: radiusMeters || config.radiusMeters,
+    radius: radiusMeters || SEARCH_CONFIG.radiusMeters,
     location: location
   });
   
@@ -43,7 +41,7 @@ export async function searchAgencies(
     searchUrl.searchParams.append('location', `${location.lat},${location.lng}`);
     
     // Radio en metros (límite estricto)
-    searchUrl.searchParams.append('radius', (radiusMeters || config.radiusMeters).toString());
+    searchUrl.searchParams.append('radius', (radiusMeters || SEARCH_CONFIG.radiusMeters).toString());
     
     // Tipo de negocio para agencias automotrices
     searchUrl.searchParams.append('type', 'car_dealer');
@@ -51,7 +49,7 @@ export async function searchAgencies(
     // NO USAR KEYWORD - obtener TODAS las agencias en el radio
     
     // Idioma
-    searchUrl.searchParams.append('language', config.language);
+    searchUrl.searchParams.append('language', SEARCH_CONFIG.language);
     
     // Solo negocios operando (opcional)
     // searchUrl.searchParams.append('opennow', 'true');
@@ -68,8 +66,40 @@ export async function searchAgencies(
     
     console.log(`✅ Encontradas ${data.results?.length || 0} agencias (sin filtrar)`);
     
-    // NO FILTRAR - Dejar que las reseñas determinen el tipo de negocio
-    const filteredResults = data.results || [];
+    // Aplicar filtros pre-reseñas para optimizar recursos
+    const filteredResults = (data.results || []).filter((place: any) => {
+      // Filtro por rating mínimo
+      if (AGENCY_FILTERS.minRating && place.rating < AGENCY_FILTERS.minRating) {
+        console.log(`❌ Filtrado por rating bajo: ${place.name} (${place.rating})`);
+        return false;
+      }
+      
+      // Filtro por número mínimo de reseñas
+      if (AGENCY_FILTERS.minReviews && place.user_ratings_total < AGENCY_FILTERS.minReviews) {
+        console.log(`❌ Filtrado por pocas reseñas: ${place.name} (${place.user_ratings_total} reseñas)`);
+        return false;
+      }
+      
+      // Filtro por teléfono requerido
+      if (AGENCY_FILTERS.requirePhone && !place.formatted_phone_number) {
+        console.log(`❌ Filtrado por falta de teléfono: ${place.name}`);
+        return false;
+      }
+      
+      // Filtro por sitio web requerido
+      if (AGENCY_FILTERS.requireWebsite && !place.website) {
+        console.log(`❌ Filtrado por falta de sitio web: ${place.name}`);
+        return false;
+      }
+      
+      // Filtro por dominios bloqueados
+      if (place.website && isBlockedDomain(place.website, AGENCY_FILTERS.blockedDomains)) {
+        console.log(`❌ Filtrado por dominio bloqueado: ${place.name} (${place.website})`);
+        return false;
+      }
+      
+      return true;
+    });
     
     console.log(`✅ Después de filtros: ${filteredResults.length} agencias relevantes`);
     
@@ -103,18 +133,17 @@ export async function searchAgencies(
       openingHours: place.opening_hours?.weekday_text,
       placeTypes: place.types,
       // Información adicional útil
-      relevanceScore: calculateRelevance(place, userQuery),
       distanceKm: Math.round(place.distance / 100) / 10 // Redondear a 1 decimal
     }));
     
-    // Ordenar por relevancia y rating
+    // Ordenar por rating y distancia
     agencies.sort((a, b) => {
-      // Primero por relevancia
-      const relevanceDiff = (b.relevanceScore || 0) - (a.relevanceScore || 0);
-      if (relevanceDiff !== 0) return relevanceDiff;
+      // Primero por rating
+      const ratingDiff = (b.rating || 0) - (a.rating || 0);
+      if (Math.abs(ratingDiff) > 0.1) return ratingDiff; // Si hay diferencia significativa en rating
       
-      // Luego por rating
-      return (b.rating || 0) - (a.rating || 0);
+      // Si ratings similares, ordenar por distancia (más cercanos primero)
+      return (a.distanceKm || 0) - (b.distanceKm || 0);
     });
     
     return agencies;
@@ -126,49 +155,32 @@ export async function searchAgencies(
 }
 
 /**
- * Calcula la relevancia de una agencia basándose en el query del usuario
+ * Extrae el dominio de una URL
  */
-function calculateRelevance(place: any, userQuery?: string): number {
-  let score = 0;
-  
-  // Base score por rating
-  if (place.rating >= 4.5) score += 3;
-  else if (place.rating >= 4.0) score += 2;
-  else if (place.rating >= 3.5) score += 1;
-  
-  // Bonus por número de reseñas
-  if (place.user_ratings_total >= 100) score += 2;
-  else if (place.user_ratings_total >= 50) score += 1;
-  
-  // Si el usuario busca una marca específica
-  if (userQuery) {
-    const nameLower = place.name.toLowerCase();
-    const queryLower = userQuery.toLowerCase();
-    
-    // Detectar marcas
-    const brands = ['toyota', 'nissan', 'honda', 'mazda', 'kia', 'hyundai', 'ford', 
-                    'chevrolet', 'volkswagen', 'bmw', 'mercedes', 'audi'];
-    
-    for (const brand of brands) {
-      if (queryLower.includes(brand) && nameLower.includes(brand)) {
-        score += 5; // Gran bonus por match de marca
-        break;
-      }
-    }
-    
-    // Bonus para agencias multimarca/seminuevos con buena reputación
-    if ((nameLower.includes('multimarca') || nameLower.includes('seminuevos')) && place.rating >= 4.0) {
-      score += 2; // Bonus moderado para multimarca con buena calificación
-    }
+function extractDomain(url: string): string {
+  try {
+    const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+    return urlObj.hostname.replace('www.', '').toLowerCase();
+  } catch {
+    return '';
   }
-  
-  // Penalizar si es principalmente taller (no agencia)
-  if (place.types?.includes('car_repair') && !place.types?.includes('car_dealer')) {
-    score -= 2;
-  }
-  
-  return Math.max(0, score);
 }
+
+/**
+ * Verifica si un dominio está bloqueado
+ */
+function isBlockedDomain(url: string, blockedDomains: string[]): boolean {
+  if (!url) return false;
+  
+  const domain = extractDomain(url);
+  if (!domain) return false;
+  
+  // Verificar si el dominio o cualquier subdominio está bloqueado
+  return blockedDomains.some(blocked => 
+    domain === blocked || domain.endsWith(`.${blocked}`)
+  );
+}
+
 
 /**
  * Calcula la distancia entre dos puntos en metros usando la fórmula de Haversine

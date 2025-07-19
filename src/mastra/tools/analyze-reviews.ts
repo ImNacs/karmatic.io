@@ -11,6 +11,7 @@ import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { getReviewsSync } from '../services/apify-reviews-sync'
 import { analyzeTrust } from '../services/trust-engine'
+import { REVIEW_ANALYSIS_CONFIG } from '../config/analysis.config'
 import type { Citation } from '../../types/citations'
 import type { Review } from '../types'
 
@@ -25,7 +26,7 @@ const inputSchema = z.object({
   agencyName: z.string().describe('Nombre de la agencia'),
   
   /** Límite de reseñas a analizar */
-  limit: z.number().optional().default(150).describe('Número máximo de reseñas a analizar')
+  limit: z.number().optional().default(REVIEW_ANALYSIS_CONFIG.maxPerAgency).describe('Número máximo de reseñas a analizar')
 })
 
 /**
@@ -87,7 +88,12 @@ export const analyzeReviews = createTool({
     
     try {
       // Obtener reseñas usando Apify
-      const reviews = await getReviewsSync(context.placeId, '1 year', 'newest', context.limit)
+      const reviews = await getReviewsSync(
+        context.placeId, 
+        REVIEW_ANALYSIS_CONFIG.startDate, 
+        REVIEW_ANALYSIS_CONFIG.sort, 
+        context.limit
+      )
       
       if (!reviews || reviews.length === 0) {
         throw new Error('No se pudieron obtener las reseñas')

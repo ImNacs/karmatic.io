@@ -7,9 +7,9 @@
 import { ParsedQuery, Agency, Location, AnalysisResult } from '../types';
 import { searchAgencies } from './google-places';
 import { getRelevantReviewsForValidation, getReviewsSync } from './apify-reviews-sync';
-import { analyzeTrust } from './trust-engine';
+import { analyzeTrust, analyzeTrustWithMetrics, ReviewMetrics } from './trust-engine';
 import { analyzeAgencyDeep } from './perplexity';
-import { ANALYSIS_CONFIG } from '../config/analysis.config';
+import { ANALYSIS_CONFIG, SEARCH_CONFIG, REVIEW_ANALYSIS_CONFIG, AGENCY_VALIDATION_CONFIG, AGENCY_FILTERS } from '../config/analysis.config';
 import { EnhancedAgencyValidator } from './enhanced-validator';
 
 // Cache de validación
@@ -20,7 +20,7 @@ const PIPELINE_CONFIG = {
   maxAgencies: ANALYSIS_CONFIG.pipeline.maxAgencies,
   timeoutMs: ANALYSIS_CONFIG.pipeline.timeoutMs,
   reviewsConfig: {
-    fallbackToBasic: ANALYSIS_CONFIG.reviews.fallbackToBasic
+    fallbackToBasic: REVIEW_ANALYSIS_CONFIG.fallbackToBasic
   },
   deepAnalysisConfig: {
     enabled: ANALYSIS_CONFIG.deepAnalysis.enabled,
@@ -43,10 +43,13 @@ export interface PipelineResult {
     errors: string[];
     totalValidated?: number;
     totalExcluded?: number;
+    totalExcludedByLowActivity?: number;
     excludedBusinesses?: {
       name: string;
       reason: string;
     }[];
+    avgKarmaScore?: number;
+    avgReviewsPerMonth?: number;
   };
 }
 
@@ -75,7 +78,7 @@ export async function runAnalysisPipeline(
     console.log('📍 Paso 1: Buscando agencias cercanas...');
     
     let nearbyAgencies: Agency[] = [];
-    const currentRadius = ANALYSIS_CONFIG.search.radiusMeters;
+    const currentRadius = SEARCH_CONFIG.radiusMeters;
     
     // Buscar con API de Google Places (Text Search)
     nearbyAgencies = await searchAgencies(
@@ -104,11 +107,11 @@ export async function runAnalysisPipeline(
       }
       
       // FASE 1: Validación con reseñas relevantes
-      if (ANALYSIS_CONFIG.validation.enabled) {
+      if (AGENCY_VALIDATION_CONFIG.enabled) {
         const validationResult = await validateAgency(agency, enhancedValidator);
         
         if (validationResult.isValid && 
-            validationResult.confidence >= 70) {
+            validationResult.confidence >= AGENCY_VALIDATION_CONFIG.confidenceThreshold) {
           validatedAgencies.push(agency);
           console.log(`✅ ${agency.name} - Validado (confianza: ${validationResult.confidence}%): ${validationResult.reason}`);
         } else {
@@ -134,6 +137,7 @@ export async function runAnalysisPipeline(
     // Paso 3: FASE 2 - Análisis completo de agencias validadas
     console.log('📊 FASE 2: Analizando agencias validadas...');
     const results: AnalysisResult[] = [];
+    let excludedByLowActivity = 0;
     const batchSize = ANALYSIS_CONFIG.pipeline.batchSize;
     
     for (let i = 0; i < validatedAgencies.length; i += batchSize) {
@@ -152,6 +156,12 @@ export async function runAnalysisPipeline(
       batchResults.forEach(result => {
         if (result) {
           results.push(result);
+        } else {
+          // Si el resultado es null, puede ser por baja actividad
+          const errorMsg = errors[errors.length - 1];
+          if (errorMsg && errorMsg.includes('reseñas/mes')) {
+            excludedByLowActivity++;
+          }
         }
       });
       
@@ -207,12 +217,29 @@ export async function runAnalysisPipeline(
     
     const executionTime = Date.now() - startTime;
     
+    // Calcular métricas agregadas
+    const avgKarmaScore = results.length > 0
+      ? results
+          .filter(r => r.reviewMetrics?.karmaScore !== null)
+          .map(r => r.reviewMetrics!.karmaScore!)
+          .reduce((sum, score, _, arr) => sum + score / arr.length, 0)
+      : null;
+      
+    const avgReviewsPerMonth = results.length > 0
+      ? results
+          .filter(r => r.reviewMetrics?.avgReviewsPerMonth !== null)
+          .map(r => r.reviewMetrics!.avgReviewsPerMonth!)
+          .reduce((sum, avg, _, arr) => sum + avg / arr.length, 0)
+      : null;
+    
     console.log(`🎯 Pipeline completado en ${executionTime}ms:`, {
       totalAgenciesFound: nearbyAgencies.length,
       totalProcessed: results.length,
       totalWithReviews: results.filter(r => r.reviewsCount > 0).length,
       totalWithDeepAnalysis: results.filter(r => r.deepAnalysis).length,
       topTrustScore: sortedResults[0]?.trustAnalysis.trustScore || 0,
+      avgKarmaScore: avgKarmaScore?.toFixed(1),
+      excludedByLowActivity,
       errors: errors.length
     });
     
@@ -227,10 +254,13 @@ export async function runAnalysisPipeline(
         errors,
         totalValidated: validatedAgencies.length,
         totalExcluded: invalidAgencies.length,
+        totalExcludedByLowActivity: excludedByLowActivity,
         excludedBusinesses: invalidAgencies.slice(0, 5).map(item => ({
           name: item.agency.name,
           reason: item.reason
-        }))
+        })),
+        avgKarmaScore: avgKarmaScore ? parseFloat(avgKarmaScore.toFixed(1)) : undefined,
+        avgReviewsPerMonth: avgReviewsPerMonth ? parseFloat(avgReviewsPerMonth.toFixed(1)) : undefined
       }
     };
     
@@ -327,7 +357,7 @@ async function validateAgency(
     // Obtener reseñas más relevantes para validación
     const validationReviews = await getRelevantReviewsForValidation(
       agency.placeId,
-      ANALYSIS_CONFIG.validation.reviewsToAnalyze
+      AGENCY_VALIDATION_CONFIG.reviewsToAnalyze
     );
     
     if (validationReviews.length === 0) {
@@ -369,12 +399,12 @@ async function analyzeValidAgency(
   console.log(`📊 Analizando agencia validada: ${agency.name}`);
   
   try {
-    // Obtener reseñas completas del último año
+    // Obtener reseñas completas usando la configuración
     const reviews = await getReviewsSync(
       agency.placeId,
-      ANALYSIS_CONFIG.reviews.reviewsPeriod,
-      ANALYSIS_CONFIG.reviews.reviewsSort,
-      ANALYSIS_CONFIG.reviews.maxReviewsPerAgency
+      REVIEW_ANALYSIS_CONFIG.startDate,
+      REVIEW_ANALYSIS_CONFIG.sort,
+      REVIEW_ANALYSIS_CONFIG.maxPerAgency
     );
     
     console.log(`📝 Obtenidas ${reviews.length} reseñas para análisis completo`);
@@ -385,8 +415,16 @@ async function analyzeValidAgency(
              review.rating >= 0 && review.rating <= 5;
     });
     
-    // Análisis de confianza
-    const trustAnalysis = analyzeTrust(validReviews);
+    // Análisis de confianza con métricas extendidas
+    const { trustAnalysis, reviewMetrics } = analyzeTrustWithMetrics(validReviews);
+    
+    // NUEVO FILTRO: Verificar promedio mensual de reseñas
+    if (reviewMetrics.avgReviewsPerMonth !== null && 
+        reviewMetrics.avgReviewsPerMonth < AGENCY_FILTERS.minMonthlyReviews) {
+      console.log(`❌ ${agency.name} - Filtrada por baja actividad: ${reviewMetrics.avgReviewsPerMonth.toFixed(1)} reseñas/mes (mínimo: ${AGENCY_FILTERS.minMonthlyReviews})`);
+      errors.push(`${agency.name} excluida: solo ${reviewMetrics.avgReviewsPerMonth.toFixed(1)} reseñas/mes`);
+      return null; // Excluir esta agencia
+    }
     
     // Calcular distancia
     const distance = calculateDistance(
@@ -402,11 +440,17 @@ async function analyzeValidAgency(
       reviews: validReviews,
       reviewsCount: validReviews.length,
       distance,
+      reviewMetrics: {
+        karmaScore: reviewMetrics.karmaScoreSample,
+        reviewFrequency: reviewMetrics.reviewFrequencySample,
+        avgReviewsPerMonth: reviewMetrics.avgReviewsPerMonth,
+        daysSinceLastReview: reviewMetrics.daysSinceLastReview
+      },
       deepAnalysis: undefined,
       timestamp: new Date()
     };
     
-    console.log(`✅ ${agency.name} analizada: ${trustAnalysis.trustScore}/100 (${trustAnalysis.trustLevel})`);
+    console.log(`✅ ${agency.name} analizada: ${trustAnalysis.trustScore}/100 (${trustAnalysis.trustLevel}) - ${reviewMetrics.avgReviewsPerMonth?.toFixed(1) || 'N/A'} reseñas/mes`);
     
     return result;
     

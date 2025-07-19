@@ -16,12 +16,47 @@ export const ANALYSIS_CONFIG = {
     language: 'es-MX'                      // Idioma de resultados
   },
   
-  // 📝 Apify Reviews API
-  reviews: {
-    reviewsPeriod: '1 year',               // Período para análisis completo
-    reviewsSort: 'newest' as const,        // Orden para análisis completo
-    maxReviewsPerAgency: 100,              // Límite por agencia (configurable en JSON)
-    fallbackToBasic: true                  // Usar Google básico si falla Apify
+  // 🔍 Filtros para validación de agencias (pre-análisis)
+  agencyFilters: {
+    minRating: Number(process.env.AGENCY_MIN_RATING) || 4.0,           // Rating mínimo requerido
+    minReviews: Number(process.env.AGENCY_MIN_REVIEWS) || 50,          // Mínimo de reseñas totales
+    minMonthlyReviews: Number(process.env.AGENCY_MIN_MONTHLY_REVIEWS) || 5, // Mínimo de reseñas mensuales promedio
+    requirePhone: process.env.AGENCY_REQUIRE_PHONE !== 'false',        // Debe tener teléfono
+    requireWebsite: process.env.AGENCY_REQUIRE_WEBSITE !== 'false',    // Debe tener sitio web
+    // Dominios bloqueados (clasificados, redes sociales, directorios)
+    blockedDomains: [
+      // Clasificados
+      'mercadolibre.com', 'mercadolibre.com.mx',
+      'segundamano.mx', 'segundamano.com',
+      'vivanuncios.com', 'vivanuncios.com.mx',
+      'olx.com', 'olx.com.mx',
+      'seminuevos.com',
+      // Redes sociales
+      'facebook.com', 'fb.com',
+      'instagram.com',
+      'twitter.com', 'x.com',
+      'tiktok.com',
+      'youtube.com',
+      // Directorios y agregadores
+      'yelp.com', 'yelp.com.mx',
+      'foursquare.com',
+      'tripadvisor.com', 'tripadvisor.com.mx',
+      'google.com', 'google.com.mx',
+      // Acortadores y páginas genéricas
+      'linktr.ee', 'linktree.com',
+      'bit.ly', 'tinyurl.com',
+      'carrd.co'
+    ]
+  },
+  
+  // 📝 Configuración para análisis de reseñas
+  reviewAnalysis: {
+    // Período de análisis - Opciones: '3 months', '6 months', '1 year', '2 years', '5 years', 'all'
+    startDate: process.env.REVIEW_ANALYSIS_START_DATE || '1 year',      
+    // Orden de reseñas - Opciones: 'newest', 'mostRelevant', 'highestRanking', 'lowestRanking'
+    sort: (process.env.REVIEW_ANALYSIS_SORT || 'newest') as 'newest' | 'mostRelevant' | 'highestRanking' | 'lowestRanking',                                            
+    maxPerAgency: Number(process.env.REVIEW_ANALYSIS_MAX) || 100,       // Límite por agencia
+    fallbackToBasic: true                                               // Usar Google básico si falla Apify
   },
   
   // 🤖 Perplexity/OpenRouter API
@@ -54,15 +89,16 @@ export const ANALYSIS_CONFIG = {
   },
   
   // ============================================
-  // 3. CONFIGURACIÓN DE VALIDACIÓN (RESPALDO)
+  // 3. CONFIGURACIÓN DE VALIDACIÓN DE AGENCIAS
   // ============================================
   
-  // 🔍 Validación con agente IA
-  validation: {
-    enabled: true,
-    reviewsToAnalyze: 15,                  // Máximo de reseñas a analizar
-    minReviewsForAnalysis: 5,              // Mínimo de reseñas para análisis confiable
-    validationModel: 'deepseek-chat',      // Modelo para validación binaria
+  // 🔍 Validación de agencias automotrices con IA
+  agencyValidation: {
+    enabled: process.env.AGENCY_VALIDATION_ENABLED !== 'false',         // Activar validación
+    reviewsToAnalyze: Number(process.env.AGENCY_VALIDATION_REVIEWS) || 15,  // Reseñas para validar
+    minReviewsRequired: 5,                                              // Mínimo para análisis confiable
+    model: 'deepseek-chat',                                            // Modelo de IA para validación
+    confidenceThreshold: 70                                            // Confianza mínima requerida
   },
   
   // ============================================
@@ -111,7 +147,9 @@ export const ANALYSIS_CONFIG = {
 
 // Exportar configuraciones individuales para compatibilidad
 export const SEARCH_CONFIG = ANALYSIS_CONFIG.search;
+export const AGENCY_FILTERS = ANALYSIS_CONFIG.agencyFilters;
+export const REVIEW_ANALYSIS_CONFIG = ANALYSIS_CONFIG.reviewAnalysis;
+export const AGENCY_VALIDATION_CONFIG = ANALYSIS_CONFIG.agencyValidation;
 export const PIPELINE_CONFIG = ANALYSIS_CONFIG.pipeline;
-export const REVIEWS_CONFIG = ANALYSIS_CONFIG.reviews;
 export const DEEP_ANALYSIS_CONFIG = ANALYSIS_CONFIG.deepAnalysis;
 export const TRUST_ENGINE_CONFIG = ANALYSIS_CONFIG.trustEngine;
