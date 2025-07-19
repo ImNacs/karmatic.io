@@ -37,6 +37,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Query analysis now provides actual value instead of just extracting entities
 - Country-specific information now properly influences search results
+- **Google Places API Migration** - Migrated from old Nearby Search API to new Places API v1
+  - Phone numbers and websites now retrieved in initial search request
+  - Eliminated need for separate Place Details API calls
+  - Re-enabled phone and website filters for better agency quality
+  - Improved performance with single API call instead of multiple
 
 ## [0.2.0] - 2025-01-15
 

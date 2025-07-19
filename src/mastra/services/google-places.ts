@@ -9,10 +9,15 @@ import { SEARCH_CONFIG, AGENCY_FILTERS } from '../config/analysis.config';
 // Configuración de la API
 const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 const PLACES_BASE_URL = 'https://maps.googleapis.com/maps/api/place';
+const PLACES_V1_URL = 'https://places.googleapis.com/v1/places:searchNearby';
+
+if (!GOOGLE_PLACES_API_KEY) {
+  throw new Error('GOOGLE_PLACES_API_KEY no está configurada');
+}
 
 /**
- * Busca agencias usando Google Places Text Search API
- * Más precisa y contextual que Nearby Search
+ * Busca agencias usando Google Places API v1 (New API)
+ * Devuelve teléfono y sitio web en una sola llamada
  */
 export async function searchAgencies(
   location: Location,
@@ -27,74 +32,80 @@ export async function searchAgencies(
   // NO USAR KEYWORD - El query es para análisis, no para filtrar
   // Dejar que Google devuelva TODAS las agencias en el radio
   
-  console.log('🔍 Búsqueda con Nearby Search API (radio estricto):', {
-    type: 'car_dealer',
+  console.log('🔍 Búsqueda con Places API v1 (con phone/website):', {
+    includedTypes: ['car_dealer'],
     radius: radiusMeters || SEARCH_CONFIG.radiusMeters,
     location: location
   });
   
   try {
-    // Usar Nearby Search API para control estricto de distancia
-    const searchUrl = new URL(`${PLACES_BASE_URL}/nearbysearch/json`);
+    // Usar la nueva Places API v1 que devuelve phone y website
+    const requestBody = {
+      includedTypes: ['car_dealer'],
+      maxResultCount: 20,
+      locationRestriction: {
+        circle: {
+          center: {
+            latitude: location.lat,
+            longitude: location.lng
+          },
+          radius: radiusMeters || SEARCH_CONFIG.radiusMeters
+        }
+      },
+      languageCode: SEARCH_CONFIG.language
+    };
     
-    // Ubicación (requerida para Nearby Search)
-    searchUrl.searchParams.append('location', `${location.lat},${location.lng}`);
-    
-    // Radio en metros (límite estricto)
-    searchUrl.searchParams.append('radius', (radiusMeters || SEARCH_CONFIG.radiusMeters).toString());
-    
-    // Tipo de negocio para agencias automotrices
-    searchUrl.searchParams.append('type', 'car_dealer');
-    
-    // NO USAR KEYWORD - obtener TODAS las agencias en el radio
-    
-    // Idioma
-    searchUrl.searchParams.append('language', SEARCH_CONFIG.language);
-    
-    // Solo negocios operando (opcional)
-    // searchUrl.searchParams.append('opennow', 'true');
-    
-    searchUrl.searchParams.append('key', GOOGLE_PLACES_API_KEY);
+    // Headers con API key y field mask
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY!,
+      'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.nationalPhoneNumber,places.websiteUri,places.types,places.currentOpeningHours'
+    };
     
     // Realizar búsqueda
-    const response = await fetch(searchUrl.toString());
+    const response = await fetch(PLACES_V1_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody)
+    });
+    
     const data = await response.json();
     
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      throw new Error(`Google Places API error: ${data.status} - ${data.error_message}`);
+    if (data.error) {
+      throw new Error(`Google Places API v1 error: ${data.error.message}`);
     }
     
-    console.log(`✅ Encontradas ${data.results?.length || 0} agencias (sin filtrar)`);
+    console.log(`✅ Encontradas ${data.places?.length || 0} agencias (sin filtrar)`);
     
-    // Aplicar filtros pre-reseñas para optimizar recursos
-    const filteredResults = (data.results || []).filter((place: any) => {
+    // Aplicar todos los filtros incluyendo teléfono y website
+    const filteredResults = (data.places || []).filter((place: any) => {
       // Filtro por rating mínimo
       if (AGENCY_FILTERS.minRating && place.rating < AGENCY_FILTERS.minRating) {
-        console.log(`❌ Filtrado por rating bajo: ${place.name} (${place.rating})`);
+        console.log(`❌ Filtrado por rating bajo: ${place.displayName?.text} (${place.rating})`);
         return false;
       }
       
       // Filtro por número mínimo de reseñas
-      if (AGENCY_FILTERS.minReviews && place.user_ratings_total < AGENCY_FILTERS.minReviews) {
-        console.log(`❌ Filtrado por pocas reseñas: ${place.name} (${place.user_ratings_total} reseñas)`);
+      if (AGENCY_FILTERS.minReviews && place.userRatingCount < AGENCY_FILTERS.minReviews) {
+        console.log(`❌ Filtrado por pocas reseñas: ${place.displayName?.text} (${place.userRatingCount} reseñas)`);
         return false;
       }
       
-      // Filtro por teléfono requerido
-      if (AGENCY_FILTERS.requirePhone && !place.formatted_phone_number) {
-        console.log(`❌ Filtrado por falta de teléfono: ${place.name}`);
+      // Filtro por teléfono (ahora disponible en la respuesta inicial)
+      if (AGENCY_FILTERS.requirePhone && !place.nationalPhoneNumber) {
+        console.log(`❌ Filtrado por falta de teléfono: ${place.displayName?.text}`);
         return false;
       }
       
-      // Filtro por sitio web requerido
-      if (AGENCY_FILTERS.requireWebsite && !place.website) {
-        console.log(`❌ Filtrado por falta de sitio web: ${place.name}`);
+      // Filtro por sitio web (ahora disponible en la respuesta inicial)
+      if (AGENCY_FILTERS.requireWebsite && !place.websiteUri) {
+        console.log(`❌ Filtrado por falta de sitio web: ${place.displayName?.text}`);
         return false;
       }
       
       // Filtro por dominios bloqueados
-      if (place.website && isBlockedDomain(place.website, AGENCY_FILTERS.blockedDomains)) {
-        console.log(`❌ Filtrado por dominio bloqueado: ${place.name} (${place.website})`);
+      if (place.websiteUri && isBlockedDomain(place.websiteUri, AGENCY_FILTERS.blockedDomains)) {
+        console.log(`❌ Filtrado por dominio bloqueado: ${place.displayName?.text} (${place.websiteUri})`);
         return false;
       }
       
@@ -108,8 +119,8 @@ export async function searchAgencies(
       const distance = calculateDistanceInMeters(
         location.lat,
         location.lng,
-        place.geometry.location.lat,
-        place.geometry.location.lng
+        place.location.latitude,
+        place.location.longitude
       );
       return { ...place, distance };
     });
@@ -119,18 +130,18 @@ export async function searchAgencies(
     
     // Convertir a nuestro formato
     const agencies: Agency[] = agenciesWithDistance.map((place: any) => ({
-      placeId: place.place_id,
-      name: place.name,
-      address: place.formatted_address,
+      placeId: place.id,
+      name: place.displayName?.text || 'Sin nombre',
+      address: place.formattedAddress,
       location: {
-        lat: place.geometry.location.lat,
-        lng: place.geometry.location.lng
+        lat: place.location.latitude,
+        lng: place.location.longitude
       },
       rating: place.rating,
-      totalReviews: place.user_ratings_total,
-      phoneNumber: place.formatted_phone_number,
-      website: place.website,
-      openingHours: place.opening_hours?.weekday_text,
+      totalReviews: place.userRatingCount,
+      phoneNumber: place.nationalPhoneNumber,
+      website: place.websiteUri,
+      openingHours: place.currentOpeningHours?.weekdayDescriptions,
       placeTypes: place.types,
       // Información adicional útil
       distanceKm: Math.round(place.distance / 100) / 10 // Redondear a 1 decimal
@@ -153,6 +164,7 @@ export async function searchAgencies(
     throw error;
   }
 }
+
 
 /**
  * Extrae el dominio de una URL
