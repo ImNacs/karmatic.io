@@ -9,7 +9,7 @@ import { Review, TrustAnalysis } from '../types';
 export interface ReviewMetrics {
   processedReviewsCount: number;
   averageRatingSample: number | null;
-  ratingDistributionSample: { 1: number; 2: number; 3: number; 4: number; 5: number };
+  ratingDistributionSample: { [key: number]: number };
   karmaScoreSample: number | null;
   responseRatePercentage: number;
   newestReviewDateSample: string | null;
@@ -388,7 +388,7 @@ function calculateKarmaScore(ratingDistribution: { [key: number]: number }): num
   // Calcular puntos totales de karma
   let totalKarmaPoints = 0;
   for (let rating = 1; rating <= 5; rating++) {
-    totalKarmaPoints += (ratingDistribution[rating] || 0) * weights[rating];
+    totalKarmaPoints += (ratingDistribution[rating] || 0) * weights[rating as keyof typeof weights];
   }
   
   // Calcular rango teórico
@@ -485,7 +485,7 @@ export function calculateReviewMetrics(reviews: Review[]): ReviewMetrics {
   let totalStarsSum = 0;
   let validRatingsCount = 0;
   let reviewsRespondedCount = 0;
-  const ratingDistributionSample = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  const ratingDistributionSample: { [key: number]: number } = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   let oldestReviewDate: Date | null = null;
   let newestReviewDate: Date | null = null;
   

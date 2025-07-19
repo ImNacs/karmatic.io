@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { parseQuery } from '@/mastra/services/query-parser';
+import { analyzeQueryIntent } from '@/mastra/tools/analyze-query-intent';
 import { runAnalysisPipeline, getPipelineSummary } from '@/mastra/services/pipeline';
 import { Location, ParsedQuery, AnalysisResponse, KarmaticError } from '@/mastra/types';
 
@@ -139,21 +139,35 @@ export async function POST(request: NextRequest) {
       lng: body.location.lng,
       address: body.location.address,
       city: body.location.city,
-      state: body.location.state
+      state: body.location.state,
+      country: body.location.country // Puede venir del frontend
     };
     
-    // Parsear query del usuario
-    console.log('🔍 Parseando query del usuario...');
-    const parsedQuery: ParsedQuery = parseQuery(body.query || '', userLocation);
-    
-    console.log('✅ Query parseada:', {
-      parseMethod: parsedQuery.parseMethod,
-      marca: parsedQuery.marca,
-      modelo: parsedQuery.modelo,
-      año: parsedQuery.año,
-      precio: parsedQuery.precio,
-      financiamiento: parsedQuery.financiamiento
+    // Analizar intención del query con IA
+    console.log('🧠 Analizando intención del query con asesor experto...');
+    const intentAnalysis = await analyzeQueryIntent.execute({
+      context: {
+        query: body.query || 'agencias automotrices',
+        country: userLocation.country || 'MX' // Default México
+      }
     });
+    
+    console.log('✅ Análisis de intención completado:', {
+      vehicleIdentified: intentAnalysis.vehicle.identified,
+      country: intentAnalysis.metadata.country,
+      primaryTargets: intentAnalysis.analysisStrategy.inventorySearch.primaryTargets,
+      alternatives: intentAnalysis.alternatives.direct.length
+    });
+    
+    // Crear ParsedQuery temporal para compatibilidad con pipeline existente
+    // TODO: Actualizar pipeline para usar intentAnalysis directamente
+    const parsedQuery: ParsedQuery = {
+      originalQuery: body.query || 'agencias automotrices',
+      location: userLocation,
+      marca: intentAnalysis.vehicle.make,
+      modelo: intentAnalysis.vehicle.model,
+      parseMethod: 'perplexity' as const // Usando IA
+    };
     
     // Ejecutar pipeline de análisis
     console.log('🔄 Ejecutando pipeline de análisis...');

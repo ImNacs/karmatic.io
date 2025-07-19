@@ -27,6 +27,11 @@ A modern application for discovering, analyzing, and selecting the best automoti
   - Intelligent filtering (rating, reviews, business type)
   - Semantic caching for 30-40% cost reduction
   - Quality scoring system (0-100)
+  - **Query Intent Analysis with Kimi K2** ✅
+    - Expert automotive advisor replacing simple parser
+    - Multi-country support (MX, CO, AR, CL)
+    - Vehicle identification and market insights
+    - Pricing, alternatives, and search strategies
 - Advanced filtering options
 - Payment integration for premium features
 - Multi-language support
@@ -93,6 +98,8 @@ A modern application for discovering, analyzing, and selecting the best automoti
 - **Authentication:** Clerk
 - **API:** Next.js API Routes
 - **AI Integration:** Mastra framework with OpenRouter
+  - Kimi K2 for query intent analysis
+  - Multi-model support via OpenRouter
 - **Web Scraping:** Apify MCP with Google Maps Extractor
 - **Caching:** Upstash Redis with semantic vector search
 - **Webhooks:** Clerk webhooks for user sync
@@ -249,6 +256,8 @@ karmatic/
 │   │   └── supabase/           # Database clients
 │   ├── mastra/                  # AI Agent System
 │   │   ├── agents/             # AI agent definitions
+│   │   ├── tools/              # Mastra tools
+│   │   │   └── analyze-query-intent.ts
 │   │   └── index.ts            # Mastra configuration
 │   ├── types/                   # TypeScript definitions
 │   └── middleware.ts            # Next.js middleware

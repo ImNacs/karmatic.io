@@ -6,10 +6,11 @@
 
 **Stack Confirmado**:
 - **Backend**: Next.js 15.3.5 + React 19 + Mastra.ai v0.10.14 (agente conversacional) + Supabase (pgvector)
-- **LLMs**: OpenRouter + AI SDK (multi-modelo: GPT-4o, Claude, Llama, Mistral, Cohere)
+- **LLMs**: OpenRouter + AI SDK (multi-modelo: GPT-4o, Claude, Llama, Mistral, Cohere, **Kimi K2**)
 - **Scraping**: Apify Actors + Perplexity para descubrimiento
 - **Cache**: Redis/Upstash
 - **Análisis**: 2-Fases (15 reseñas validación → análisis profundo si >70% confianza)
+- **Query Parser**: Sistema básico regex + fallback para queries complejos
 
 **Cobertura**: Todo México  
 **Prioridad**: Mobile-first + Profundidad de análisis  
@@ -28,6 +29,7 @@ Flujo: Form → /api/analyze → Save → /explorer/[searchId] → Chat
 - Chat API busca agente "basic" inexistente
 - Sin sistema de citations
 - Difícil mantener, extender y testear
+- Query parser extrae info pero no se usa en búsqueda
 
 ### Arquitectura Multi-Agente Propuesta
 
@@ -63,6 +65,7 @@ interface OrchestratorAgent {
     location: Location;
     context?: ConversationContext;
   }): Promise<{
+    queryIntent?: QueryIntent; // Análisis de intención
     agencies: AnalysisResult[];
     _sources?: Citation[]; // Referencias externas
   }>
@@ -1204,9 +1207,89 @@ const prohibited = {
 8. **Trust Indicators** funcionando en la interfaz ✅
 9. **Transformación de datos** entre formatos ✅
 
-### 🚧 En Progreso (Fase 1.3 - Chat Conversacional con Citations)
+### ✅ Completado (Fase 1.3 - MVP Query Intent Tool)
 
-#### Fase 1.3 - Chat Conversacional + Citations (PRIORIDAD ACTUAL)
+**Decisión de Arquitectura**: Reemplazar completamente query-parser.ts con una tool inteligente que aporte valor real al análisis.
+
+#### Fase 1.3 - MVP Query Intent Tool ✅ COMPLETADO
+
+**Objetivo**: Reemplazar el query-parser actual con una tool inteligente que actúe como asesor automotriz experto.
+
+**Tareas de Implementación**:
+- [x] Crear tool analyze-query-intent con Kimi K2 ✅
+- [x] Definir schemas entrada/salida con Zod ✅
+- [x] Implementar soporte multi-país desde inicio ✅
+- [x] Extraer país de LocationAutocomplete ✅
+- [x] Integrar asesor experto automotriz ✅
+- [x] Reemplazar parseQuery en pipeline ✅
+- [x] Eliminar query-parser.ts legacy ✅
+- [x] Validación frontend para queries no automotrices ✅
+
+**Logros**:
+- Tool `analyze-query-intent.ts` completamente implementada
+- Soporte para MX, CO, AR, CL con contexto específico
+- Detección de queries no automotrices
+- Análisis experto con precios, alternativas y estrategias
+- Frontend actualizado para extraer y pasar código ISO del país
+- Integración completa en pipeline de análisis
+
+**Arquitectura de la Tool**:
+```typescript
+// Input
+{
+  query: string
+  country: string  // ISO code: 'MX', 'CO', 'AR', etc.
+}
+
+// Output - Asesor Automotriz Experto
+{
+  metadata: {
+    country: string
+    currency: string
+    marketName: string
+  }
+  
+  vehicle: {
+    identified: boolean
+    make?: string
+    model?: string
+    type: string
+    segment: string
+  }
+  
+  marketInsights: {
+    availability: 'common' | 'limited' | 'rare'
+    localConsiderations: string[]
+  }
+  
+  pricing: {
+    new?: { starting: number, range: string }
+    used?: { sweetSpot: { years, price, reason } }
+  }
+  
+  alternatives: {
+    direct: Array<{ model, priceComparison, localAdvantage }>
+    localFavorites?: Array<{ model, reason }>
+  }
+  
+  analysisStrategy: {
+    inventorySearch: { targets, yearRange, countryTips }
+    reviewFocus: string[]
+    dealerPriorities: { preferred, avoid }
+  }
+}
+```
+
+**Valor Agregado**:
+- Conocimiento profundo de cada modelo
+- Precios y disponibilidad por país
+- Competidores y alternativas inteligentes
+- Guía específica para análisis posterior
+- Tips locales y regulaciones
+
+### 🔮 Próximas Fases
+
+#### Fase 1.4 - Chat Conversacional + Citations
 - [ ] Implementar sistema de citations en herramientas
 - [ ] Crear agente Mastra con instrucciones de citación
 - [ ] Actualizar 8 herramientas con _sources
@@ -1215,16 +1298,14 @@ const prohibited = {
 - [ ] SourcesPanel bottom sheet
 - [ ] Integrar chat con análisis existente
 
-### 🔮 Próximas Fases
-
-#### Fase 1.4 - Búsqueda Híbrida con pgvector
+#### Fase 1.5 - Búsqueda Híbrida con pgvector
 - [ ] Crear tabla `agencies` mínima
 - [ ] Agregar tipo 'vehicle' a documents
 - [ ] Implementar generación de embeddings
 - [ ] Función RPC hybrid_search
 - [ ] Búsqueda semántica integrada
 
-#### Fase 1.5 - UI/UX Mobile-First MVP
+#### Fase 1.6 - UI/UX Mobile-First MVP
 - [ ] Landing page optimizada mobile
 - [ ] Chat interface full screen
 - [ ] Touch targets 44px mínimo
@@ -1288,6 +1369,89 @@ const prohibited = {
 
 ---
 
-*Última actualización: Julio 17, 2025*  
+## 📚 Documentos de Investigación Relacionados
+
+### Comportamiento del Consumidor
+- `/docs/research/comportamiento-compra-automotriz-mexico.md` - Investigación completa sobre:
+  - Journey del comprador mexicano
+  - Decisión nuevo vs seminuevo (40% considera ambos)
+  - Factores por nivel socioeconómico
+  - Pain points y tendencias 2024-2025
+
+## 🎯 MVP Query Intent Tool - Especificación Detallada
+
+### Objetivo
+Reemplazar completamente el query-parser actual con una tool inteligente que actúe como **asesor automotriz experto**, capaz de entender cualquier tipo de query y proveer guía contextual específica por país.
+
+### Filosofía de Diseño
+- **De Parser a Asesor**: No solo extraer entidades, sino aportar conocimiento experto
+- **Multi-País desde Inicio**: Diseño escalable para expansión internacional
+- **Orientado a Valor**: Cada análisis debe mejorar la búsqueda y resultados posteriores
+- **Flexible**: Funciona con queries ultra-específicos o completamente generales
+
+### Casos de Uso y Respuestas
+
+#### 1. **Query Ultra Específico**
+```
+Input: "mazda mx5"
+Output: Especificaciones completas, precios MX, competidores (GR86), 
+        alternativas prácticas (Mazda3 Turbo), dónde buscar, qué revisar
+```
+
+#### 2. **Query Comparativo**
+```
+Input: "civic o corolla qué conviene"
+Output: Comparación directa, pros/cons de cada uno en México,
+        agencias que venden ambos, aspectos clave en reviews
+```
+
+#### 3. **Query por Necesidad**
+```
+Input: "auto para uber economico"
+Output: Top 3 modelos (Versa, Aveo, Virtus), consideraciones Uber,
+        agencias con financiamiento para conductores, seminuevos ideales
+```
+
+#### 4. **Query Exploratorio**
+```
+Input: "necesito cambiar mi auto"
+Output: Preguntas de calificación, categorías sugeridas,
+        educación sobre depreciación, nuevo vs seminuevo
+```
+
+### Integración con Pipeline
+
+```typescript
+// Flujo actual (con query-parser)
+query → parseQuery() → búsqueda genérica → análisis uniforme
+
+// Flujo nuevo (con intent tool)
+query → analyzeQueryIntent() → búsqueda dirigida → análisis orientado
+                ↓
+         Conocimiento experto
+         Guía específica
+         Mejores resultados
+```
+
+### Datos de País a Incluir
+
+#### México (MX) - Inicial
+- Precios en MXN actualizados
+- Versiones vendidas oficialmente
+- Consideraciones: verificación, autos chocolate
+- Preferencias: SUVs, pickups, financiamiento
+
+#### Expansión Futura
+- Colombia (CO): Pico y placa, preferencia sedanes
+- Argentina (AR): Impuestos importación, inflación
+- Chile (CL): Normas Euro 6, mercado estable
+
+### Métricas de Éxito
+- **Cobertura**: 95% queries con análisis útil
+- **Velocidad**: <1s para respuesta
+- **Precisión**: Precios ±10% reales
+- **Relevancia**: Alternativas aceptadas 80%+
+
+*Última actualización: Enero 19, 2025*  
 *Documento vivo - Actualizado con cada milestone*  
-*Prioridad actual: Fase 1.3 - Chat Conversacional + Citations System*
+*Prioridad actual: Fase 1.3 - MVP Query Intent Tool*

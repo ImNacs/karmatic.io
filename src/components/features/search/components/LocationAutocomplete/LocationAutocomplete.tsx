@@ -14,7 +14,7 @@ interface LocationAutocompleteProps {
   value: string
   onChange: (value: string) => void
   onPlaceSelect?: (place: PlacePrediction) => void
-  onLocationSelect?: (coords: { lat: number; lng: number }) => void
+  onLocationSelect?: (coords: { lat: number; lng: number; country?: string }) => void
   placeholder?: string
   disabled?: boolean
   className?: string
@@ -184,7 +184,7 @@ export function LocationAutocomplete({
           const { latitude, longitude } = position.coords
           const coords = { lat: latitude, lng: longitude }
           
-          // Always pass coordinates to parent
+          // Pass coordinates to parent initially (will update with country later)
           if (onLocationSelect) {
             onLocationSelect(coords)
           }
@@ -200,6 +200,8 @@ export function LocationAutocomplete({
                 let locationName = ""
                 let cityName = ""
                 let stateName = ""
+                let countryName = ""
+                let countryCode = ""
                 
                 // Extract location components
                 for (const result of results) {
@@ -214,10 +216,13 @@ export function LocationAutocomplete({
                       cityName = component.long_name
                     } else if (component.types.includes("administrative_area_level_1")) {
                       stateName = component.short_name
+                    } else if (component.types.includes("country")) {
+                      countryName = component.long_name
+                      countryCode = component.short_name // Código ISO de 2 letras
                     }
                   }
                   // Stop when we have enough information
-                  if (locationName && cityName) break
+                  if (locationName && cityName && countryName) break
                 }
                 
                 // Build the location string with available information
@@ -230,20 +235,36 @@ export function LocationAutocomplete({
                   if (stateName) {
                     finalLocation += `, ${stateName}`
                   }
+                  if (countryName) {
+                    finalLocation += `, ${countryName}`
+                  }
                 } else if (cityName) {
                   // If no neighborhood found, use city
                   finalLocation = cityName
                   if (stateName) {
                     finalLocation += `, ${stateName}`
                   }
+                  if (countryName) {
+                    finalLocation += `, ${countryName}`
+                  }
                 } else if (stateName) {
-                  // Last resort, just use state
+                  // Use state with country if available
                   finalLocation = stateName
+                  if (countryName) {
+                    finalLocation += `, ${countryName}`
+                  }
+                } else if (countryName) {
+                  // Last resort, just use country
+                  finalLocation = countryName
                 }
                 
                 if (finalLocation) {
                   wasSelectedRef.current = true
                   onChange(finalLocation)
+                  // Update location with country code if available
+                  if (onLocationSelect && countryCode) {
+                    onLocationSelect({ lat: latitude, lng: longitude, country: countryCode })
+                  }
                 } else {
                   // Ultimate fallback
                   wasSelectedRef.current = true

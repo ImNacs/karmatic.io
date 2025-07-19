@@ -10,6 +10,7 @@ export interface Location {
   address?: string;
   city?: string;
   state?: string;
+  country?: string; // Código ISO de 2 letras (MX, CO, AR, CL, etc.)
 }
 
 // Query parseada del usuario

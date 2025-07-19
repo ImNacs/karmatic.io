@@ -4,7 +4,7 @@
  */
 
 import { Agency, Review } from '../types';
-import { ANALYSIS_CONFIG } from '../config/analysis.config';
+import { AGENCY_VALIDATION_CONFIG } from '../config/analysis.config';
 import { validateAgency, validateAgencyOutputSchema } from '../tools/validate-agency';
 import { z } from 'zod';
 
@@ -59,7 +59,7 @@ export class EnhancedAgencyValidator {
         placeId: agency.placeId,
         rating: agency.rating,
         totalReviews: agency.totalReviews,
-        reviews: reviews.slice(0, ANALYSIS_CONFIG.validation.reviewsToAnalyze).map(r => ({
+        reviews: reviews.slice(0, AGENCY_VALIDATION_CONFIG.reviewsToAnalyze).map(r => ({
           text: r.text,
           rating: r.rating,
           timeCreated: r.date

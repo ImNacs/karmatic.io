@@ -36,7 +36,7 @@ export function SearchForm({
   isAuthenticated
 }: SearchFormProps) {
   const [selectedPlace, setSelectedPlace] = useState<PlacePrediction | null>(null)
-  const [currentLocationCoords, setCurrentLocationCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [currentLocationCoords, setCurrentLocationCoords] = useState<{ lat: number; lng: number; country?: string } | null>(null)
 
   const form = useForm<SearchFormData>({
     resolver: zodResolver(searchSchema),
@@ -79,7 +79,7 @@ export function SearchForm({
     setCurrentLocationCoords(null)
   }
 
-  const handleLocationSelect = (coords: { lat: number; lng: number }) => {
+  const handleLocationSelect = (coords: { lat: number; lng: number; country?: string }) => {
     setCurrentLocationCoords(coords)
     // Reset selected place when using current location
     setSelectedPlace(null)

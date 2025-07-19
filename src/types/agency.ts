@@ -210,5 +210,7 @@ export interface SearchData {
     lat: number
     /** Longitude */
     lng: number
+    /** Country ISO code (e.g., "MX", "CO", "AR") */
+    country?: string
   }
 }

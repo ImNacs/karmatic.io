@@ -10,7 +10,24 @@ import * as z from "zod"
  */
 export const searchSchema = z.object({
   location: z.string().min(1, "La ubicación es requerida"),
-  query: z.string().optional(),
+  query: z.string().optional().refine(
+    (val) => {
+      if (!val || val.trim() === '') return true; // Vacío es válido
+      
+      // Lista de términos NO automotrices comunes
+      const nonAutoTerms = [
+        'pizza', 'comida', 'restaurante', 'doctor', 'médico', 'hospital',
+        'gimnasio', 'gym', 'hotel', 'farmacia', 'banco', 'atm', 'cajero',
+        'escuela', 'universidad', 'super', 'mercado', 'tienda', 'ropa'
+      ];
+      
+      const queryLower = val.toLowerCase();
+      return !nonAutoTerms.some(term => queryLower.includes(term));
+    },
+    {
+      message: "Parece que buscas algo no relacionado con agencias automotrices. Intenta con marcas o modelos de autos."
+    }
+  ),
 })
 
 /**

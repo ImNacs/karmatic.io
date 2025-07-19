@@ -84,7 +84,8 @@ export default function Home() {
             location: {
               lat: coordinates?.lat || 0,
               lng: coordinates?.lng || 0,
-              address: data.location
+              address: data.location,
+              country: coordinates?.country || 'MX' // Default México
             }
           })
         })
