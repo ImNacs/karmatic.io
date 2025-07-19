@@ -66,11 +66,6 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(new URL(redirectUrl, req.url));
   }
   
-  // Skip protection for public routes
-  if (isPublicRoute(req) || isPublicApiRoute(req)) {
-    return NextResponse.next();
-  }
-  
   // Protect routes that require authentication
   if (isProtectedRoute(req) && !userId) {
     const signInUrl = new URL('/auth/signin', req.url);
@@ -78,7 +73,7 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(signInUrl);
   }
   
-  // Allow the request to continue
+  // Allow the request to continue (Clerk will still authenticate public routes)
   return NextResponse.next();
 });
 

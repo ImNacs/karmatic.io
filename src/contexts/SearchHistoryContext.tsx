@@ -116,6 +116,9 @@ const fetcher = async (url: string) => {
   try {
     const res = await fetch(url, {
       credentials: 'include', // Include cookies for anonymous tracking
+      headers: {
+        'Content-Type': 'application/json',
+      },
     })
     
     // Always try to parse JSON response
@@ -127,7 +130,6 @@ const fetcher = async (url: string) => {
       return []
     }
     
-    console.log('Fetched search history:', data)
     // data.searches es un array de grupos: [{label: 'Hoy', searches: [...]}, ...]
     return data.searches || []
   } catch (error) {
@@ -150,19 +152,21 @@ const fetcher = async (url: string) => {
  * ```
  */
 export function SearchHistoryProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useUser()
+  const { user, isLoaded } = useUser()
   
   // Use SWR for efficient caching and automatic revalidation
-  const { data: history = [], isLoading, mutate } = useSWR<SearchGroup[]>(
-    '/api/search/history',
+  const { data: history = [], isLoading, mutate, error } = useSWR<SearchGroup[]>(
+    '/api/search/history', // Always fetch, let the server handle auth
     fetcher,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       dedupingInterval: 60000, // Dedupe requests for 1 minute
       refreshInterval: 0, // No automatic refresh
+      revalidateOnMount: true, // Force revalidation on mount
     }
   )
+  
   
   // Use React 19's useOptimistic for instant updates
   const [optimisticHistory, addOptimistic] = useOptimistic(
@@ -174,11 +178,12 @@ export function SearchHistoryProvider({ children }: { children: React.ReactNode 
   
   // Clear history when user logs out
   useEffect(() => {
-    if (!user) {
+    if (!user && isLoaded) {
       // User logged out, clear the SWR cache
       mutate([], false)
     }
-  }, [user, mutate])
+  }, [user, isLoaded, mutate])
+  
   
   // Add optimistic search with temporary ID
   const addOptimisticSearch = useCallback((search: Omit<SearchItem, 'id' | 'createdAt'>) => {

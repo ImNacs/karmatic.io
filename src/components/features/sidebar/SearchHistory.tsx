@@ -111,7 +111,10 @@ function SearchHistoryComponent({ className }: SearchHistoryProps) {
     }
   }
   
-  if (history.length === 0) {
+  // Check if there are any searches in any group
+  const hasSearches = history.some(group => group.searches && group.searches.length > 0)
+  
+  if (!hasSearches) {
     return (
       <div className={cn("p-4", className)}>
         <div className="text-center py-8 text-muted-foreground">

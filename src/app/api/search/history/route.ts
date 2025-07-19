@@ -31,31 +31,26 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Para usuarios no autenticados, no mostrar historial
-      console.log('🔍 No userId, returning empty history')
     }
     
     // Transform conversations to search history format
-    console.log('🔍 Conversations to transform:', conversations.length)
-    if (conversations.length > 0) {
-      console.log('🔍 First conversation:', JSON.stringify(conversations[0], null, 2))
-    }
     
     const searchHistory = conversations.map(conv => {
       const metadata = conv.metadata as any || {}
-      console.log('🔍 Processing conv:', conv.id, { title: conv.title, metadata })
       
       // Extract location and query from metadata or title
       let location = metadata.location || ''
       let query = metadata.query || ''
       
-      // If no location in metadata, try to extract from title
+      // Si no hay location/query en metadata, extraer del title
       if (!location && conv.title) {
-        const match = conv.title.match(/(.+) en (.+)/)
-        if (match) {
-          query = match[1]
-          location = match[2]
+        // El formato del title es: "Ubicación - Query" o solo "Ubicación"
+        const parts = conv.title.split(' - ')
+        if (parts.length >= 2) {
+          location = parts[0].trim()
+          query = parts[1].trim()
         } else {
-          location = conv.title
+          location = conv.title.trim()
         }
       }
       
@@ -66,15 +61,11 @@ export async function GET(request: NextRequest) {
         createdAt: conv.createdAt
       }
       
-      console.log('🔍 Transformed result:', result)
       return result
     })
     
     // Group by date
     const grouped = groupSearchesByDate(searchHistory)
-    
-    console.log('🔍 Final grouped result:', JSON.stringify(grouped, null, 2))
-    console.log('🔍 Total searches:', searchHistory.length)
     
     return NextResponse.json({
       searches: grouped,
